@@ -21,6 +21,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { getConversations, getMessages, sendMessageApi, uploadChatFile } from '../../../api/chatApi';
+import { BASE_URL } from '../../../api/axiosInstance';
+
 import { useAuth } from '../../../context/AuthContext';
 import gsap from 'gsap';
 
@@ -319,10 +321,12 @@ const Messages = () => {
                         {msg.messageType === 'image' && (
                           <div className="mb-3 overflow-hidden rounded-xl border border-white/10 shadow-sm">
                             <img
-                              src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${msg.fileUrl}`}
+                              src={`${BASE_URL}${msg.fileUrl}`}
+
                               alt="attachment"
                               className="max-w-full h-auto object-cover hover:scale-105 transition-transform duration-500 cursor-pointer rounded-lg"
-                              onClick={() => window.open(`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${msg.fileUrl}`, '_blank')}
+                              onClick={() => window.open(`${BASE_URL}${msg.fileUrl}`, '_blank')}
+
                             />
                           </div>
                         )}
@@ -337,7 +341,8 @@ const Messages = () => {
                               <p className={`text-[10px] font-bold opacity-60 ${isMe ? 'text-white' : 'text-slate-400'}`}>Document File</p>
                             </div>
                             <a
-                              href={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${msg.fileUrl}`}
+                              href={`${BASE_URL}${msg.fileUrl}`}
+
                               target="_blank"
                               rel="noreferrer"
                               download

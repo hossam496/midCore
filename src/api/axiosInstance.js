@@ -6,14 +6,19 @@ import axios from 'axios';
  * - withCredentials: true → sends HTTP-only cookie on every request
  * - Centralized request/response interceptors
  */
+const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace('/api', '');
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-  withCredentials: true,          // Send cookies (JWT) with every request
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,                 // 15 second timeout
+  timeout: 15000,
 });
+
+export { BASE_URL };
+
 
 // ── Response Interceptor ────────────────────────────────────────────────────
 api.interceptors.response.use(
