@@ -9,7 +9,8 @@ import {
   ArrowRight,
   Plus,
   ArrowLeft,
-  Loader2
+  Loader2,
+  Printer
 } from 'lucide-react';
 import gsap from 'gsap';
 import confetti from 'canvas-confetti';
@@ -80,58 +81,69 @@ const BookingConfirmationPage = () => {
     };
   }, []);
 
-  const handleDownloadReceipt = async () => {
+  const handleDownloadAndPrint = async () => {
     if (!receiptRef.current) return;
     
     try {
       setIsDownloading(true);
       
-      // Save current scroll position and scroll to top to prevent html2canvas blank canvas bug
+      // Save current scroll position and scroll to top
       const scrollY = window.scrollY;
       window.scrollTo(0, 0);
       
       const canvas = await html2canvas(receiptRef.current, {
-        scale: 2, // High resolution
-        useCORS: true, // Allow cross-origin images (like the MedCore logo if remote)
-        backgroundColor: '#ffffff', // Clean white background
+        scale: 2, 
+        useCORS: true, 
+        backgroundColor: '#ffffff',
         logging: false,
-        windowWidth: document.documentElement.offsetWidth,
-        windowHeight: document.documentElement.offsetHeight,
       });
 
-      // Restore scroll position
       window.scrollTo(0, scrollY);
 
-      const image = canvas.toDataURL('image/png', 1.0);
-      
-      // Trigger download
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = `receipt-${appointmentId}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success('تم تحميل الإيصال بنجاح');
+      // Convert to Blob for better mobile support
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          toast.error('حدث خطأ أثناء معالجة الصورة');
+          setIsDownloading(false);
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `receipt-${appointmentId}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast.success('تم تحميل الإيصال كصورة');
+        setIsDownloading(false);
+
+        // Open print dialog immediately after download
+        setTimeout(() => {
+          window.print();
+        }, 500);
+
+      }, 'image/png', 1.0);
+
     } catch (error) {
       console.error('Failed to generate receipt:', error);
       toast.error('حدث خطأ أثناء تحميل الإيصال. يرجى المحاولة مرة أخرى.');
-    } finally {
       setIsDownloading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pt-32 pb-20 px-6 flex flex-col items-center justify-center overflow-hidden" ref={containerRef}>
+    <div className="min-h-screen bg-[#f8fafc] print:bg-white pt-32 print:pt-0 pb-20 px-6 flex flex-col items-center justify-center overflow-hidden" ref={containerRef}>
 
       {/* Success Icon */}
-      <div ref={checkRef} className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center shadow-xl shadow-green-200 mb-8 relative">
+      <div ref={checkRef} className="print:hidden w-24 h-24 bg-green-100 rounded-full flex items-center justify-center shadow-xl shadow-green-200 mb-8 relative">
         <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-20" />
         <Check size={48} className="text-green-600 stroke-[3px]" />
       </div>
 
       {/* Main Message */}
-      <div className="text-center space-y-4 mb-12 max-w-lg">
+      <div className="print:hidden text-center space-y-4 mb-12 max-w-lg">
         <h1 className="animate-up text-4xl md:text-5xl font-black text-gray-900 tracking-tight">تم تأكيد الحجز!</h1>
         <p className="animate-up text-lg text-gray-500 font-medium">
           تم جدولة موعدك مع <span className="text-blue-600 font-bold">{doctor.user?.name || doctor.name}</span> بنجاح.
@@ -139,16 +151,16 @@ const BookingConfirmationPage = () => {
       </div>
 
       {/* Summary Card (Wrapper for animation) */}
-      <div className="animate-up w-full max-w-xl relative mb-12">
+      <div className="animate-up w-full max-w-xl relative mb-12 print:mb-0 print:shadow-none">
         
-        {/* Actual Receipt Container for html2canvas */}
+        {/* Actual Receipt Container for html2canvas & Print */}
         <div 
           ref={receiptRef}
           id="receipt-container"
-          className="w-full bg-white rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-2xl shadow-blue-900/5 relative"
+          className="w-full bg-white rounded-[2.5rem] print:rounded-none p-8 md:p-12 border border-gray-100 print:border-none shadow-2xl shadow-blue-900/5 print:shadow-none relative"
         >
           {/* Receipt Header (Logo & Title) */}
-          <div className="flex justify-between items-start mb-8 pb-8 border-b border-gray-50">
+          <div className="flex justify-between items-start mb-8 pb-8 border-b border-gray-50 print:border-gray-300">
             <div>
               <h3 className="text-xl font-black text-gray-900">إيصال الحجز</h3>
               <p className="text-sm font-bold text-gray-400 mt-1">عيادات ميدكور التخصصية</p>
@@ -156,10 +168,10 @@ const BookingConfirmationPage = () => {
             </div>
             <div className="text-left">
               {/* Appointment ID Tag */}
-              <span className="text-[10px] font-mono font-black text-gray-300 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+              <span className="text-[10px] font-mono font-black text-gray-300 uppercase tracking-widest bg-gray-50 print:bg-white px-3 py-1 rounded-full border border-gray-100 print:border-gray-400">
                 ID: {appointmentId}
               </span>
-              <div className="mt-3 text-xs font-bold px-3 py-1 bg-green-50 text-green-600 rounded-full inline-block border border-green-100">
+              <div className="mt-3 text-xs font-bold px-3 py-1 bg-green-50 print:bg-white text-green-600 print:text-black rounded-full inline-block border border-green-100 print:border-gray-400">
                 مؤكد
               </div>
             </div>
@@ -168,7 +180,7 @@ const BookingConfirmationPage = () => {
           <div className="space-y-8">
             
             {/* Patient & Doctor Info */}
-            <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-100/50">
+            <div className="bg-blue-50/30 print:bg-white rounded-2xl p-6 border border-blue-100/50 print:border-gray-300">
                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">المريض</p>
@@ -177,7 +189,7 @@ const BookingConfirmationPage = () => {
                   <div>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الطبيب</p>
                     <p className="text-sm font-bold text-gray-900">{doctor.user?.name || doctor.name}</p>
-                    <p className="text-xs font-bold text-blue-600/70">{doctor.specialty || 'تخصص عام'}</p>
+                    <p className="text-xs font-bold text-blue-600/70 print:text-gray-600">{doctor.specialty || 'تخصص عام'}</p>
                   </div>
                </div>
             </div>
@@ -185,19 +197,19 @@ const BookingConfirmationPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Date & Time */}
               <div className="flex gap-4">
-                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 flex-shrink-0">
+                <div className="w-12 h-12 bg-blue-50 print:bg-white print:border print:border-gray-300 rounded-2xl flex items-center justify-center text-blue-600 print:text-gray-800 flex-shrink-0">
                   <Calendar size={24} />
                 </div>
                 <div>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الوقت والتاريخ</p>
                   <p className="text-lg font-bold text-gray-900">{formattedDate}</p>
-                  <p className="text-sm font-bold text-blue-600/70">{bookingData.time || 'صباحاً ١٠:٣٠'}</p>
+                  <p className="text-sm font-bold text-blue-600/70 print:text-gray-600">{bookingData.time || 'صباحاً ١٠:٣٠'}</p>
                 </div>
               </div>
 
               {/* Location */}
               <div className="flex gap-4">
-                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 flex-shrink-0">
+                <div className="w-12 h-12 bg-blue-50 print:bg-white print:border print:border-gray-300 rounded-2xl flex items-center justify-center text-blue-600 print:text-gray-800 flex-shrink-0">
                   <MapPin size={24} />
                 </div>
                 <div>
@@ -209,13 +221,13 @@ const BookingConfirmationPage = () => {
             </div>
 
             {/* QR Code */}
-            <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-50">
+            <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-50 print:border-gray-300">
               <div className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm">
                 <QRCode 
                   value={`https://mid-core.vercel.app/verify/${appointmentId}`}
                   size={100}
                   level="H"
-                  className="opacity-80"
+                  className="opacity-80 print:opacity-100"
                 />
               </div>
               <p className="text-[10px] font-bold text-gray-300 mt-3 tracking-widest">امسح الكود للتحقق من الحجز</p>
@@ -225,7 +237,7 @@ const BookingConfirmationPage = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="animate-up flex flex-col sm:flex-row items-center gap-4 w-full max-w-xl">
+      <div className="print:hidden animate-up flex flex-col sm:flex-row items-center gap-4 w-full max-w-xl">
         <Button
           variant="primary"
           onClick={() => {
@@ -238,23 +250,23 @@ const BookingConfirmationPage = () => {
           <ArrowLeft size={20} className="mr-2" />
         </Button>
         <button 
-          onClick={handleDownloadReceipt}
+          onClick={handleDownloadAndPrint}
           disabled={isDownloading}
           className="w-full sm:w-auto flex items-center justify-center gap-2 px-10 py-5 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors bg-white border border-gray-100 rounded-[2rem] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isDownloading ? (
             <Loader2 size={20} className="animate-spin" />
           ) : (
-            <Download size={20} />
+            <Printer size={20} />
           )}
-          {isDownloading ? 'جاري التحميل...' : 'تحميل الإيصال'}
+          {isDownloading ? 'جاري التجهيز...' : 'طباعة وتحميل الإيصال'}
         </button>
       </div>
 
       {/* Back Link */}
       <Link
         to="/"
-        className="animate-up flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest mt-12 hover:text-blue-600 transition-colors"
+        className="print:hidden animate-up flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest mt-12 hover:text-blue-600 transition-colors"
       >
         <ArrowRight size={14} />
         العودة للرئيسية
