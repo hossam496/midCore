@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from '../api/axiosInstance';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import api from '../api/axiosInstance';
 import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
@@ -8,67 +8,70 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [pushStatus, setPushStatus] = useState('unsupported'); // Simplified
+  const [pushStatus] = useState('unsupported');
   const { isAuthenticated } = useAuth();
 
   // Fetch notifications via REST
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      // In a real REST-only app, we might poll this or just fetch on load
-      const res = await axios.get('/users/notifications');
+      const res = await api.get('/users/notifications');
       if (res.data.success) {
         setNotifications(res.data.notifications || []);
         setUnreadNotifCount(res.data.unreadCount || 0);
       }
     } catch (err) {
-      console.error('Failed to fetch notifications:', err);
+      // Silently fail — don't crash the app if notifications are unavailable
+      if (import.meta.env.DEV) {
+        console.warn('Notifications fetch failed:', err?.response?.data?.message || err.message);
+      }
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchNotifications();
-      // Replace real-time with polling (every 30 seconds)
-      const interval = setInterval(fetchNotifications, 30000);
+      // Poll every 60 seconds (Vercel serverless — avoid too-frequent cold starts)
+      const interval = setInterval(fetchNotifications, 60000);
       return () => clearInterval(interval);
     } else {
       setNotifications([]);
       setUnreadNotifCount(0);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchNotifications]);
 
-
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  const toggleDropdown = () => setIsDropdownOpen(prev => !prev);
   const closeDropdown = () => setIsDropdownOpen(false);
 
   const markRead = async (id) => {
     try {
-      await axios.patch(`/users/notifications/${id}/read`);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      await api.patch(`/users/notifications/${id}/read`);
+      setNotifications(prev =>
+        prev.map(n => n._id === id ? { ...n, read: true } : n)
+      );
       setUnreadNotifCount(prev => Math.max(0, prev - 1));
     } catch (err) {
-      console.error('Failed to mark notification as read:', err);
+      if (import.meta.env.DEV) console.warn('markRead failed:', err.message);
     }
   };
 
   const markAllRead = async () => {
     try {
-      await axios.patch('/users/notifications/read-all');
+      await api.patch('/users/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadNotifCount(0);
     } catch (err) {
-      console.error('Failed to mark all as read:', err);
+      if (import.meta.env.DEV) console.warn('markAllRead failed:', err.message);
     }
   };
 
   const clearAll = async () => {
     try {
-      await axios.delete('/users/notifications');
+      await api.delete('/users/notifications');
       setNotifications([]);
       setUnreadNotifCount(0);
     } catch (err) {
-      console.error('Failed to clear notifications:', err);
+      if (import.meta.env.DEV) console.warn('clearAll failed:', err.message);
     }
   };
 
@@ -84,7 +87,7 @@ export const NotificationProvider = ({ children }) => {
         markRead,
         markAllRead,
         clearAll,
-        refreshNotifications: fetchNotifications
+        refreshNotifications: fetchNotifications,
       }}
     >
       {children}
