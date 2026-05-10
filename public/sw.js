@@ -74,6 +74,12 @@ self.addEventListener('fetch', (event) => {
           if (event.request.mode === 'navigate') {
             return caches.match(OFFLINE_URL);
           }
+          // Return a default error response instead of undefined
+          return new Response('Network error or offline', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: new Headers({ 'Content-Type': 'text/plain' })
+          });
         });
     })
   );
