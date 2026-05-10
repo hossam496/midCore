@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Activity, Clock, FileText, Image as ImageIcon, Save, CheckCircle2, MapPin, Globe, GraduationCap, Briefcase, Plus, X, Upload } from 'lucide-react';
 import { getMyDoctorProfile, updateMyDoctorProfile, uploadDoctorImage } from '../../../api/doctorApi';
-import { BASE_URL } from '../../../api/axiosInstance';
+import { getFullImageUrl } from '../../../api/axiosInstance';
 import { useAuth } from '../../../context/AuthContext';
 
 const Profile = () => {
@@ -119,10 +119,11 @@ const Profile = () => {
       setUploadingImage(true);
       const res = await uploadDoctorImage(data);
       if (res.data.success) {
-        // Construct final URL
-        const finalImageUrl = BASE_URL + res.data.imageUrl;
-        setFormData((prev) => ({ ...prev, image: finalImageUrl }));
-        updateUser({ image: finalImageUrl });
+        // Only save the relative path to the database (e.g., /doctors/image.jpg)
+        // The frontend will prefix it with BASE_URL during rendering
+        const relativeImageUrl = res.data.imageUrl;
+        setFormData((prev) => ({ ...prev, image: relativeImageUrl }));
+        updateUser({ image: relativeImageUrl });
       }
     } catch (err) {
       console.error('Failed to upload image', err);
@@ -177,7 +178,7 @@ const Profile = () => {
               <div className="relative group">
                 <div className="w-48 h-48 rounded-3xl bg-slate-100 border-4 border-white shadow-xl overflow-hidden flex items-center justify-center relative">
                   {formData.image ? (
-                    <img src={formData.image.startsWith('http') ? formData.image : `${BASE_URL}${formData.image}`} alt="Profile" className="w-full h-full object-cover" />
+                    <img src={getFullImageUrl(formData.image)} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
                     <User size={64} className="text-slate-300" />
                   )}

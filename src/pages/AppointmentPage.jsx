@@ -17,7 +17,7 @@ import gsap from 'gsap';
 import { getDoctorById } from '../api/doctorApi';
 import { getAvailableSlots } from '../api/appointmentApi';
 import { useBooking } from '../context/BookingContext';
-import { BASE_URL } from '../api/axiosInstance';
+import { getFullImageUrl } from '../api/axiosInstance';
 import Button from '../components/Button';
 import { format, addMonths, subMonths, isSameDay, isAfter, startOfDay } from 'date-fns';
 
@@ -306,7 +306,7 @@ const AppointmentPage = () => {
                 <div className="flex items-center gap-4 pb-8 border-b border-gray-50 mb-8 relative z-10">
                   <div className="w-20 h-20 rounded-3xl overflow-hidden shadow-xl border-4 border-white">
                     <img
-                      src={doctor.image?.startsWith('http') ? doctor.image : `${BASE_URL}${doctor.image}`}
+                      src={getFullImageUrl(doctor.image)}
                       alt={doctor.user?.name}
                       className="w-full h-full object-cover"
                     />
