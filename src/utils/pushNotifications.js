@@ -8,9 +8,7 @@
  *  4. Sending subscription to backend
  *  5. Unsubscribing on logout
  */
-
-import { API_URL_EXPORT as API_BASE } from '../api/axiosInstance';
-
+import { BASE_URL as API_BASE } from '../api/axiosInstance';
 /**
  * Convert a base64 VAPID public key to a Uint8Array
  * (required by pushManager.subscribe)
