@@ -9,8 +9,7 @@ import {
   ArrowRight,
   Plus,
   ArrowLeft,
-  Loader2,
-  Printer
+  Loader2
 } from 'lucide-react';
 import gsap from 'gsap';
 import confetti from 'canvas-confetti';
@@ -257,7 +256,7 @@ const BookingConfirmationPage = () => {
           {isDownloading ? (
             <Loader2 size={20} className="animate-spin" />
           ) : (
-            <Printer size={20} />
+            <Download size={20} />
           )}
           {isDownloading ? 'جاري التجهيز...' : 'طباعة وتحميل الإيصال'}
         </button>
