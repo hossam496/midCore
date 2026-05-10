@@ -86,12 +86,21 @@ const BookingConfirmationPage = () => {
     try {
       setIsDownloading(true);
       
+      // Save current scroll position and scroll to top to prevent html2canvas blank canvas bug
+      const scrollY = window.scrollY;
+      window.scrollTo(0, 0);
+      
       const canvas = await html2canvas(receiptRef.current, {
         scale: 2, // High resolution
         useCORS: true, // Allow cross-origin images (like the MedCore logo if remote)
         backgroundColor: '#ffffff', // Clean white background
         logging: false,
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.offsetHeight,
       });
+
+      // Restore scroll position
+      window.scrollTo(0, scrollY);
 
       const image = canvas.toDataURL('image/png', 1.0);
       
@@ -129,83 +138,88 @@ const BookingConfirmationPage = () => {
         </p>
       </div>
 
-      {/* Summary Card (Receipt Container) */}
-      <div 
-        ref={receiptRef}
-        className="animate-up w-full max-w-xl bg-white rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-2xl shadow-blue-900/5 relative mb-12"
-      >
-        {/* Receipt Header (Logo & Title) */}
-        <div className="flex justify-between items-start mb-8 pb-8 border-b border-gray-50">
-          <div>
-            <h3 className="text-xl font-black text-gray-900">إيصال الحجز</h3>
-            <p className="text-sm font-bold text-gray-400 mt-1">عيادات ميدكور التخصصية</p>
-            <p className="text-xs text-gray-400 mt-1">{new Date().toLocaleString('ar-EG')}</p>
-          </div>
-          <div className="text-left">
-            {/* Appointment ID Tag */}
-            <span className="text-[10px] font-mono font-black text-gray-300 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-              ID: {appointmentId}
-            </span>
-            <div className="mt-3 text-xs font-bold px-3 py-1 bg-green-50 text-green-600 rounded-full inline-block border border-green-100">
-              مؤكد
+      {/* Summary Card (Wrapper for animation) */}
+      <div className="animate-up w-full max-w-xl relative mb-12">
+        
+        {/* Actual Receipt Container for html2canvas */}
+        <div 
+          ref={receiptRef}
+          id="receipt-container"
+          className="w-full bg-white rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-2xl shadow-blue-900/5 relative"
+        >
+          {/* Receipt Header (Logo & Title) */}
+          <div className="flex justify-between items-start mb-8 pb-8 border-b border-gray-50">
+            <div>
+              <h3 className="text-xl font-black text-gray-900">إيصال الحجز</h3>
+              <p className="text-sm font-bold text-gray-400 mt-1">عيادات ميدكور التخصصية</p>
+              <p className="text-xs text-gray-400 mt-1">{new Date().toLocaleString('ar-EG')}</p>
+            </div>
+            <div className="text-left">
+              {/* Appointment ID Tag */}
+              <span className="text-[10px] font-mono font-black text-gray-300 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                ID: {appointmentId}
+              </span>
+              <div className="mt-3 text-xs font-bold px-3 py-1 bg-green-50 text-green-600 rounded-full inline-block border border-green-100">
+                مؤكد
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-8">
-          
-          {/* Patient & Doctor Info */}
-          <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-100/50">
-             <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">المريض</p>
-                  <p className="text-sm font-bold text-gray-900">{user?.name || 'مريض غير مسجل'}</p>
+          <div className="space-y-8">
+            
+            {/* Patient & Doctor Info */}
+            <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-100/50">
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">المريض</p>
+                    <p className="text-sm font-bold text-gray-900">{user?.name || 'مريض غير مسجل'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الطبيب</p>
+                    <p className="text-sm font-bold text-gray-900">{doctor.user?.name || doctor.name}</p>
+                    <p className="text-xs font-bold text-blue-600/70">{doctor.specialty || 'تخصص عام'}</p>
+                  </div>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Date & Time */}
+              <div className="flex gap-4">
+                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 flex-shrink-0">
+                  <Calendar size={24} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الطبيب</p>
-                  <p className="text-sm font-bold text-gray-900">{doctor.user?.name || doctor.name}</p>
-                  <p className="text-xs font-bold text-blue-600/70">{doctor.specialty || 'تخصص عام'}</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الوقت والتاريخ</p>
+                  <p className="text-lg font-bold text-gray-900">{formattedDate}</p>
+                  <p className="text-sm font-bold text-blue-600/70">{bookingData.time || 'صباحاً ١٠:٣٠'}</p>
                 </div>
-             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Date & Time */}
-            <div className="flex gap-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 flex-shrink-0">
-                <Calendar size={24} />
               </div>
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الوقت والتاريخ</p>
-                <p className="text-lg font-bold text-gray-900">{formattedDate}</p>
-                <p className="text-sm font-bold text-blue-600/70">{bookingData.time || 'صباحاً ١٠:٣٠'}</p>
+
+              {/* Location */}
+              <div className="flex gap-4">
+                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 flex-shrink-0">
+                  <MapPin size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الموقع</p>
+                  <p className="text-lg font-bold text-gray-900">مركز ميدكور</p>
+                  <p className="text-sm font-bold text-gray-400">الشارع الرئيسي، المنطقة ٤</p>
+                </div>
               </div>
             </div>
 
-            {/* Location */}
-            <div className="flex gap-4">
-              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 flex-shrink-0">
-                <MapPin size={24} />
+            {/* QR Code */}
+            <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-50">
+              <div className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                <QRCode 
+                  value={`https://mid-core.vercel.app/verify/${appointmentId}`}
+                  size={100}
+                  level="H"
+                  className="opacity-80"
+                />
               </div>
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الموقع</p>
-                <p className="text-lg font-bold text-gray-900">مركز ميدكور</p>
-                <p className="text-sm font-bold text-gray-400">الشارع الرئيسي، المنطقة ٤</p>
-              </div>
+              <p className="text-[10px] font-bold text-gray-300 mt-3 tracking-widest">امسح الكود للتحقق من الحجز</p>
             </div>
-          </div>
-
-          {/* QR Code */}
-          <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-50">
-            <div className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm">
-              <QRCode 
-                value={`https://mid-core.vercel.app/verify/${appointmentId}`}
-                size={100}
-                level="H"
-                className="opacity-80"
-              />
-            </div>
-            <p className="text-[10px] font-bold text-gray-300 mt-3 tracking-widest">امسح الكود للتحقق من الحجز</p>
           </div>
         </div>
       </div>
