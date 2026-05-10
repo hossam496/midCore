@@ -3,11 +3,7 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/assets/(.*)",
-      "destination": "/assets/$1"
-    },
-    {
-      "source": "/((?!api/|uploads/|doctors/|chat/).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
