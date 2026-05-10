@@ -1,0 +1,114 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import MainLayout from './layouts/MainLayout';
+import HomePage from './pages/HomePage';
+import FindSpecialist from './pages/FindSpecialist';
+import DoctorProfile from './pages/DoctorProfile';
+import ContactPage from './pages/ContactPage';
+import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
+import AppointmentPage from './pages/AppointmentPage';
+import PatientDetailsPage from './pages/PatientDetailsPage';
+import BookingConfirmationPage from './pages/BookingConfirmationPage';
+import PatientMessagesPage from './pages/PatientMessagesPage';
+import { AuthProvider } from './context/AuthContext';
+import { BookingProvider } from './context/BookingContext';
+import { NotificationProvider } from './context/NotificationContext';
+import ProtectedRoute from './components/ProtectedRoute';
+
+
+// Lazy load dashboard modules for performance
+const DoctorRoutes = React.lazy(() => import('./dashboard/routes/DoctorRoutes'));
+const AdminRoutes = React.lazy(() => import('./dashboard/routes/AdminRoutes'));
+
+const LoadingScreen = () => (
+  <div className="min-h-screen flex items-center justify-center bg-white">
+    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
+const App = () => {
+  return (
+    <AuthProvider>
+      <NotificationProvider>
+        <BookingProvider>
+          <Router>
+          <React.Suspense fallback={<LoadingScreen />}>
+            <Routes>
+              {/* Role-Based Dashboard Routes - Checked first */}
+              <Route
+                path="/doctor/*"
+                element={
+                  <ProtectedRoute allowedRole="doctor">
+                    <DoctorRoutes />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin/*"
+                element={
+                  <ProtectedRoute allowedRole="admin">
+                    <AdminRoutes />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Public App Routes */}
+              <Route path="/" element={<MainLayout />}>
+                <Route index element={<HomePage />} />
+                <Route
+                  path="specialists"
+                  element={
+                    <ProtectedRoute>
+                      <FindSpecialist />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="specialists/:id" element={<DoctorProfile />} />
+                <Route
+                  path="schedule/:doctorId"
+                  element={
+                    <ProtectedRoute>
+                      <AppointmentPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="patient-details"
+                  element={
+                    <ProtectedRoute>
+                      <PatientDetailsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="booking-confirmation"
+                  element={
+                    <ProtectedRoute>
+                      <BookingConfirmationPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="messages"
+                  element={
+                    <ProtectedRoute>
+                      <PatientMessagesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="contact" element={<ContactPage />} />
+                <Route path="register" element={<RegisterPage />} />
+                <Route path="login" element={<LoginPage />} />
+              </Route>
+            </Routes>
+          </React.Suspense>
+        </Router>
+        </BookingProvider>
+      </NotificationProvider>
+    </AuthProvider>
+  );
+};
+
+export default App;
