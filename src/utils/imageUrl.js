@@ -27,27 +27,24 @@ const BASE_URL = getBaseUrl();
  */
 export const getImageUrl = (path) => {
   if (!path) return "/default-avatar.png";
+  if (typeof path !== 'string') return "/default-avatar.png";
 
-  // 1. Handle absolute URLs (Google avatars, etc.)
-  if (path.startsWith("http") && !path.includes("localhost:")) {
-    return path;
-  }
-
-  // 2. Fix legacy hardcoded localhost URLs from database
-  if (path.includes("localhost:5000") || path.includes("localhost:5001")) {
-    // Extract the path after the domain
-    // e.g., http://localhost:5001/uploads/image.jpg -> /uploads/image.jpg
-    const parts = path.split(/localhost:500[01]/);
-    const relativePath = parts[parts.length - 1];
+  // Regex to catch: http://localhost:5001, http://127.0.0.1:5001, etc.
+  const localRegex = /^https?:\/\/(?:localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(?::\d+)?/i;
+  
+  if (localRegex.test(path)) {
+    // Strip the local domain and port, then prefix with production BASE_URL
+    const relativePath = path.replace(localRegex, '');
     return `${BASE_URL}${relativePath.startsWith('/') ? '' : '/'}${relativePath}`;
   }
 
-  // 3. Handle relative paths (e.g., /doctors/img.jpg or uploads/img.jpg)
-  // Ensure the path starts with a slash for consistent concatenation
+  // If it's already a valid absolute URL (e.g. Google avatar), return as is
+  if (path.startsWith("http")) {
+    return path;
+  }
+
+  // Handle relative paths (e.g., /uploads/doctors/img.jpg)
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  
-  // Note: Backend might serve from /uploads, /doctors, or /chat
-  // If the path already includes these, don't double-prefix
   return `${BASE_URL}${cleanPath}`;
 };
 

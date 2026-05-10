@@ -1,7 +1,13 @@
 {
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/assets/(.*)",
+      "destination": "/assets/$1"
+    },
+    {
+      "source": "/((?!api/|uploads/|doctors/|chat/).*)",
       "destination": "/index.html"
     }
   ]
