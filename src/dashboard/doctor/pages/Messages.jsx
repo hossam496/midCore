@@ -21,7 +21,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { getConversations, getMessages, sendMessageApi, uploadChatFile } from '../../../api/chatApi';
-import { getFullImageUrl } from '../../../api/axiosInstance';
+import getImageUrl from '../../../utils/imageUrl';
 
 import { useAuth } from '../../../context/AuthContext';
 import gsap from 'gsap';
@@ -321,10 +321,10 @@ const Messages = () => {
                         {msg.messageType === 'image' && (
                           <div className="mb-3 overflow-hidden rounded-xl border border-white/10 shadow-sm">
                             <img
-                              src={getFullImageUrl(msg.fileUrl)}
+                              src={getImageUrl(msg.fileUrl)}
                               alt="attachment"
                               className="max-w-full h-auto object-cover hover:scale-105 transition-transform duration-500 cursor-pointer rounded-lg"
-                              onClick={() => window.open(getFullImageUrl(msg.fileUrl), '_blank')}
+                              onClick={() => window.open(getImageUrl(msg.fileUrl), '_blank')}
                             />
                           </div>
                         )}
@@ -339,7 +339,7 @@ const Messages = () => {
                               <p className={`text-[10px] font-bold opacity-60 ${isMe ? 'text-white' : 'text-slate-400'}`}>Document File</p>
                             </div>
                             <a
-                              href={getFullImageUrl(msg.fileUrl)}
+                              href={getImageUrl(msg.fileUrl)}
                               target="_blank"
                               rel="noreferrer"
                               download

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, ExternalLink, ChevronRight, Video, FileText, Activity, User } from 'lucide-react';
 import { getAppointments } from '../../../api/appointmentApi';
+import getImageUrl from '../../../utils/imageUrl';
 
 const AppointmentTimeline = () => {
   const [appointments, setAppointments] = useState([]);
@@ -87,7 +88,7 @@ const AppointmentTimeline = () => {
                   </div>
                   <div className="flex items-center gap-3 pt-1">
                     {apt.image && (
-                      <img src={apt.image} alt="" className="w-9 h-9 rounded-full border border-white shadow-sm" />
+                      <img src={getImageUrl(apt.image)} alt="" className="w-9 h-9 rounded-full border border-white shadow-sm" />
                     )}
                     <div>
                       <h4 className="text-sm font-bold text-slate-800">{apt.patient}</h4>

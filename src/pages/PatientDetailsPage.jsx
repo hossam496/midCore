@@ -16,7 +16,7 @@ import {
 import gsap from 'gsap';
 import { createAppointment } from '../api/appointmentApi';
 import { useBooking } from '../context/BookingContext';
-import { getFullImageUrl } from '../api/axiosInstance';
+import getImageUrl from '../utils/imageUrl';
 import Button from '../components/Button';
 
 const PatientDetailsPage = () => {
@@ -275,7 +275,7 @@ const PatientDetailsPage = () => {
                 <div className="flex items-center gap-4 pb-6 border-b border-gray-50 mb-6">
                   <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md border-2 border-blue-50">
                     <img
-                      src={getFullImageUrl(doctor.image)}
+                      src={getImageUrl(doctor.image)}
                       alt={doctor.user?.name}
                       className="w-full h-full object-cover"
                     />

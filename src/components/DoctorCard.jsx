@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Clock, Calendar, ArrowRight } from 'lucide-react';
-import { getFullImageUrl } from '../api/axiosInstance';
+import getImageUrl from '../utils/imageUrl';
 
 const DoctorCard = ({ id, name, role, specialty, rating, experience, availability, image, featured }) => {
   return (
@@ -11,7 +11,7 @@ const DoctorCard = ({ id, name, role, specialty, rating, experience, availabilit
         <div className="flex gap-4">
           <div className="relative">
             <img 
-              src={getFullImageUrl(image)} 
+              src={getImageUrl(image)} 
               alt={name} 
               className="w-16 h-16 rounded-full object-cover border-2 border-gray-50"
             />

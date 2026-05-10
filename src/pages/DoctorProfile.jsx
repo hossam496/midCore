@@ -18,7 +18,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { getDoctorById } from '../api/doctorApi';
 import { getOrCreateConversation } from '../api/chatApi';
 import { getAvailableSlots } from '../api/appointmentApi';
-import { getFullImageUrl } from '../api/axiosInstance';
+import getImageUrl from '../utils/imageUrl';
 import { useBooking } from '../context/BookingContext';
 import Button from '../components/Button';
 import ExperienceTimeline from '../components/profile/ExperienceTimeline';
@@ -203,7 +203,7 @@ const DoctorProfile = () => {
                   <div className="relative">
                     {doctor.image ? (
                       <img
-                        src={getFullImageUrl(doctor.image)}
+                        src={getImageUrl(doctor.image)}
                         alt={doctor.name}
                         className="w-40 h-40 rounded-[2rem] object-cover border-4 border-blue-50 shadow-lg"
                       />

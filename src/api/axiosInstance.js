@@ -12,48 +12,26 @@ import axios from 'axios';
 // Hardcoded production backend URL — always correct even if env var is missing
 const PRODUCTION_API = 'https://backend-med-core.vercel.app/api';
 
-// Only use VITE_API_URL if it's a valid absolute URL (starts with http)
-const envUrl = import.meta.env.VITE_API_URL;
-const API_URL = (envUrl && envUrl.startsWith('http')) ? envUrl : PRODUCTION_API;
+import getImageUrl from '../utils/imageUrl';
 
-// Base URL without /api suffix (used for constructing image/file URLs)
-export const API_URL_EXPORT = API_URL; // Renamed to avoid collision if any
-export const BASE_URL = API_URL.replace(/\/api\/?$/, '');
+// Export BASE_URL and getImageUrl for global use
+export const BASE_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith('http')) 
+  ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '') 
+  : 'https://backend-med-core.vercel.app';
 
-/**
- * Helper to get the full URL for an image/file.
- * It handles:
- * 1. Relative paths (prefixes with BASE_URL)
- * 2. Absolute URLs (returns as-is)
- * 3. Legacy localhost URLs (replaces localhost with BASE_URL)
- */
-export const getFullImageUrl = (path) => {
-  if (!path) return '';
-  if (typeof path !== 'string') return '';
-  
-  // If it's a legacy localhost URL from a previous local upload, strip it and use BASE_URL
-  if (path.includes('localhost:5001')) {
-    const relativePath = path.split('localhost:5001')[1];
-    return `${BASE_URL}${relativePath}`;
-  }
-
-  // If it's already an absolute URL (like a Google avatar or Gravatar), return as is
-  if (path.startsWith('http')) {
-    return path;
-  }
-
-  // Otherwise, treat as relative path and prefix with current BASE_URL
-  return `${BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
-};
+export { getImageUrl };
+export const getFullImageUrl = getImageUrl; // Maintain backward compatibility with previous turn
 
 const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: true,    // Required for cross-origin cookie (JWT auth)
+  baseURL: (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith('http')) 
+    ? import.meta.env.VITE_API_URL 
+    : 'https://backend-med-core.vercel.app/api',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 20000, // 20 second timeout for Vercel cold starts
+  timeout: 20000,
 });
 
 // ── Response Interceptor ────────────────────────────────────────────────────

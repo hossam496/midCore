@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search, Globe, User } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import { getFullImageUrl } from '../../../api/axiosInstance';
+import getImageUrl from '../../../utils/imageUrl';
 
 const Header = () => {
   const { user } = useAuth();
@@ -36,7 +36,7 @@ const Header = () => {
           </div>
           {user?.image ? (
             <img
-              src={getFullImageUrl(user.image)}
+              src={getImageUrl(user.image)}
               alt="Profile"
               className="w-11 h-11 rounded-2xl object-cover border border-slate-200"
             />

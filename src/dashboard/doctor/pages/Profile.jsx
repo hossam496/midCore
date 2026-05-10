@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Activity, Clock, FileText, Image as ImageIcon, Save, CheckCircle2, MapPin, Globe, GraduationCap, Briefcase, Plus, X, Upload } from 'lucide-react';
 import { getMyDoctorProfile, updateMyDoctorProfile, uploadDoctorImage } from '../../../api/doctorApi';
-import { getFullImageUrl } from '../../../api/axiosInstance';
+import getImageUrl from '../../../utils/imageUrl';
 import { useAuth } from '../../../context/AuthContext';
 
 const Profile = () => {
@@ -178,7 +178,7 @@ const Profile = () => {
               <div className="relative group">
                 <div className="w-48 h-48 rounded-3xl bg-slate-100 border-4 border-white shadow-xl overflow-hidden flex items-center justify-center relative">
                   {formData.image ? (
-                    <img src={getFullImageUrl(formData.image)} alt="Profile" className="w-full h-full object-cover" />
+                    <img src={getImageUrl(formData.image)} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
                     <User size={64} className="text-slate-300" />
                   )}
