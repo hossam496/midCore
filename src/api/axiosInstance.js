@@ -17,6 +17,7 @@ const envUrl = import.meta.env.VITE_API_URL;
 const API_URL = (envUrl && envUrl.startsWith('http')) ? envUrl : PRODUCTION_API;
 
 // Base URL without /api suffix (used for constructing image/file URLs)
+export const API_URL_EXPORT = API_URL; // Renamed to avoid collision if any
 export const BASE_URL = API_URL.replace(/\/api\/?$/, '');
 
 const api = axios.create({

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Clock, Calendar, ArrowRight } from 'lucide-react';
+import { BASE_URL } from '../api/axiosInstance';
 
 const DoctorCard = ({ id, name, role, specialty, rating, experience, availability, image, featured }) => {
   return (
@@ -10,7 +11,7 @@ const DoctorCard = ({ id, name, role, specialty, rating, experience, availabilit
         <div className="flex gap-4">
           <div className="relative">
             <img 
-              src={image?.startsWith('http') ? image : `${import.meta.env.VITE_API_URL.replace('/api', '')}${image}`} 
+              src={image?.startsWith('http') ? image : `${BASE_URL}${image}`} 
               alt={name} 
               className="w-16 h-16 rounded-full object-cover border-2 border-gray-50"
             />

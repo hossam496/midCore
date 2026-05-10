@@ -9,7 +9,7 @@
  *  5. Unsubscribing on logout
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+import { API_URL_EXPORT as API_BASE } from '../api/axiosInstance';
 
 /**
  * Convert a base64 VAPID public key to a Uint8Array

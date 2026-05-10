@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, Globe, User } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { BASE_URL } from '../../../api/axiosInstance';
 
 const Header = () => {
   const { user } = useAuth();
@@ -35,7 +36,7 @@ const Header = () => {
           </div>
           {user?.image ? (
             <img
-              src={user.image.startsWith('http') ? user.image : `${import.meta.env.VITE_API_URL?.replace('/api', '')}${user.image}`}
+              src={user.image.startsWith('http') ? user.image : `${BASE_URL}${user.image}`}
               alt="Profile"
               className="w-11 h-11 rounded-2xl object-cover border border-slate-200"
             />

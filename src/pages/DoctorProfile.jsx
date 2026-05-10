@@ -18,6 +18,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { getDoctorById } from '../api/doctorApi';
 import { getOrCreateConversation } from '../api/chatApi';
 import { getAvailableSlots } from '../api/appointmentApi';
+import { BASE_URL } from '../api/axiosInstance';
 import { useBooking } from '../context/BookingContext';
 import Button from '../components/Button';
 import ExperienceTimeline from '../components/profile/ExperienceTimeline';
@@ -202,7 +203,7 @@ const DoctorProfile = () => {
                   <div className="relative">
                     {doctor.image ? (
                       <img
-                        src={doctor.image?.startsWith('http') ? doctor.image : `${import.meta.env.VITE_API_URL.replace('/api', '')}${doctor.image}`}
+                        src={doctor.image?.startsWith('http') ? doctor.image : `${BASE_URL}${doctor.image}`}
                         alt={doctor.name}
                         className="w-40 h-40 rounded-[2rem] object-cover border-4 border-blue-50 shadow-lg"
                       />
