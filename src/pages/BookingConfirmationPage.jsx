@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Check,
@@ -8,18 +8,26 @@ import {
   Download,
   ArrowRight,
   Plus,
-  ArrowLeft
+  ArrowLeft,
+  Loader2
 } from 'lucide-react';
 import gsap from 'gsap';
 import confetti from 'canvas-confetti';
+import html2canvas from 'html2canvas';
+import toast from 'react-hot-toast';
+import QRCode from 'react-qr-code';
 import { useBooking } from '../context/BookingContext';
 import Button from '../components/Button';
+import { useAuth } from '../context/AuthContext';
 
 const BookingConfirmationPage = () => {
   const navigate = useNavigate();
   const { bookingData, clearBooking } = useBooking();
+  const { user } = useAuth();
   const containerRef = useRef(null);
   const checkRef = useRef(null);
+  const receiptRef = useRef(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const doctor = bookingData.doctor || { user: { name: 'Dr. Sarah Johnson' } };
   const appointmentId = "MC-" + Math.random().toString(36).substr(2, 9).toUpperCase();
@@ -72,6 +80,38 @@ const BookingConfirmationPage = () => {
     };
   }, []);
 
+  const handleDownloadReceipt = async () => {
+    if (!receiptRef.current) return;
+    
+    try {
+      setIsDownloading(true);
+      
+      const canvas = await html2canvas(receiptRef.current, {
+        scale: 2, // High resolution
+        useCORS: true, // Allow cross-origin images (like the MedCore logo if remote)
+        backgroundColor: '#ffffff', // Clean white background
+        logging: false,
+      });
+
+      const image = canvas.toDataURL('image/png', 1.0);
+      
+      // Trigger download
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `receipt-${appointmentId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('تم تحميل الإيصال بنجاح');
+    } catch (error) {
+      console.error('Failed to generate receipt:', error);
+      toast.error('حدث خطأ أثناء تحميل الإيصال. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] pt-32 pb-20 px-6 flex flex-col items-center justify-center overflow-hidden" ref={containerRef}>
 
@@ -89,16 +129,46 @@ const BookingConfirmationPage = () => {
         </p>
       </div>
 
-      {/* Summary Card */}
-      <div className="animate-up w-full max-w-xl bg-white rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-2xl shadow-blue-900/5 relative mb-12">
-        {/* Appointment ID Tag */}
-        <div className="absolute top-8 left-8">
-          <span className="text-[10px] font-mono font-black text-gray-300 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-            ID: {appointmentId}
-          </span>
+      {/* Summary Card (Receipt Container) */}
+      <div 
+        ref={receiptRef}
+        className="animate-up w-full max-w-xl bg-white rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-2xl shadow-blue-900/5 relative mb-12"
+      >
+        {/* Receipt Header (Logo & Title) */}
+        <div className="flex justify-between items-start mb-8 pb-8 border-b border-gray-50">
+          <div>
+            <h3 className="text-xl font-black text-gray-900">إيصال الحجز</h3>
+            <p className="text-sm font-bold text-gray-400 mt-1">عيادات ميدكور التخصصية</p>
+            <p className="text-xs text-gray-400 mt-1">{new Date().toLocaleString('ar-EG')}</p>
+          </div>
+          <div className="text-left">
+            {/* Appointment ID Tag */}
+            <span className="text-[10px] font-mono font-black text-gray-300 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+              ID: {appointmentId}
+            </span>
+            <div className="mt-3 text-xs font-bold px-3 py-1 bg-green-50 text-green-600 rounded-full inline-block border border-green-100">
+              مؤكد
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-10">
+        <div className="space-y-8">
+          
+          {/* Patient & Doctor Info */}
+          <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-100/50">
+             <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">المريض</p>
+                  <p className="text-sm font-bold text-gray-900">{user?.name || 'مريض غير مسجل'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الطبيب</p>
+                  <p className="text-sm font-bold text-gray-900">{doctor.user?.name || doctor.name}</p>
+                  <p className="text-xs font-bold text-blue-600/70">{doctor.specialty || 'تخصص عام'}</p>
+                </div>
+             </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Date & Time */}
             <div className="flex gap-4">
@@ -125,11 +195,18 @@ const BookingConfirmationPage = () => {
             </div>
           </div>
 
-          {/* Add to Calendar */}
-          <button className="flex items-center gap-2 text-xs font-bold text-blue-600 bg-blue-50/50 hover:bg-blue-50 px-4 py-2.5 rounded-xl transition-all border border-blue-100/50">
-            <Plus size={16} />
-            إضافة إلى تقويم جوجل
-          </button>
+          {/* QR Code */}
+          <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-50">
+            <div className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm">
+              <QRCode 
+                value={`https://mid-core.vercel.app/verify/${appointmentId}`}
+                size={100}
+                level="H"
+                className="opacity-80"
+              />
+            </div>
+            <p className="text-[10px] font-bold text-gray-300 mt-3 tracking-widest">امسح الكود للتحقق من الحجز</p>
+          </div>
         </div>
       </div>
 
@@ -139,16 +216,24 @@ const BookingConfirmationPage = () => {
           variant="primary"
           onClick={() => {
             clearBooking();
-            navigate('/doctor/dashboard'); // Or patient dashboard if exists
+            navigate('/dashboard'); // Or patient dashboard
           }}
           className="w-full sm:flex-1 py-5 rounded-[2rem] shadow-xl shadow-blue-200 font-bold"
         >
           العودة للوحة التحكم
           <ArrowLeft size={20} className="mr-2" />
         </Button>
-        <button className="w-full sm:w-auto flex items-center justify-center gap-2 px-10 py-5 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors bg-white border border-gray-100 rounded-[2rem] hover:bg-gray-50">
-          <Download size={20} />
-          تحميل الإيصال
+        <button 
+          onClick={handleDownloadReceipt}
+          disabled={isDownloading}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-10 py-5 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors bg-white border border-gray-100 rounded-[2rem] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isDownloading ? (
+            <Loader2 size={20} className="animate-spin" />
+          ) : (
+            <Download size={20} />
+          )}
+          {isDownloading ? 'جاري التحميل...' : 'تحميل الإيصال'}
         </button>
       </div>
 
