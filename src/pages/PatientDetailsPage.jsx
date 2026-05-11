@@ -18,6 +18,7 @@ import { createAppointment } from '../api/appointmentApi';
 import { useBooking } from '../context/BookingContext';
 import getImageUrl from '../utils/imageUrl';
 import Button from '../components/Button';
+import PatientReviews from '../components/profile/PatientReviews';
 
 const PatientDetailsPage = () => {
   const navigate = useNavigate();
@@ -331,6 +332,13 @@ const PatientDetailsPage = () => {
           </div>
 
         </div>
+
+        {/* Patient Reviews Section */}
+        {doctor && (
+          <div className="mt-20">
+            <PatientReviews reviews={doctor.reviews || []} />
+          </div>
+        )}
       </div>
     </div>
   );
