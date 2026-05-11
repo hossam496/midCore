@@ -1,281 +1,259 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, Suspense, lazy } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import {
-  Check,
-  Calendar,
-  Clock,
-  MapPin,
-  Download,
-  ArrowRight,
-  Plus,
-  ArrowLeft,
-  Loader2
-} from 'lucide-react';
+
+// Icons مع فحص الأمان
+import * as LucideIcons from 'lucide-react';
+const { 
+  Check, Calendar, Clock, MapPin, Download, 
+  ArrowRight, Plus, ArrowLeft, Loader2 
+} = LucideIcons;
+
+// استيراد QRCode بشكل ديناميكي لتجنب مشاكل الـ Bundling في Production
+const QRCode = lazy(() => import('react-qr-code').then(module => {
+  // بعض النسخ تصدر كـ Default وبعضها كـ Named Export
+  return { default: module.default || module };
+}).catch(err => {
+  console.error('Failed to load QRCode component', err);
+  return { default: () => <div className="p-4 border border-dashed border-gray-200 text-[10px] text-gray-400">QR Code Unavailable</div> };
+}));
+
 import gsap from 'gsap';
 import confetti from 'canvas-confetti';
 import html2canvas from 'html2canvas';
 import toast from 'react-hot-toast';
-import QRCode from 'react-qr-code';
+
+// Contexts
 import { useBooking } from '../context/BookingContext';
-import Button from '../components/Button.jsx';
 import { useAuth } from '../context/AuthContext';
 
+// Components
+import Button from '../components/Button';
+
+/**
+ * SafeRender - مكنون لحماية الصفحة من خطأ React #130
+ * يضمن أن المكون موجود قبل محاولة رندرته
+ */
+const SafeRender = ({ component: Component, fallback = null, ...props }) => {
+  if (!Component || (typeof Component !== 'function' && typeof Component !== 'object')) {
+    return fallback;
+  }
+  return <Component {...props} />;
+};
+
 const BookingConfirmationPage = () => {
+  // --- Debugging Zone for Production ---
+  useEffect(() => {
+    const componentsToVerify = { 
+      LucideIcons, 
+      Check, 
+      Button, 
+      Loader2, 
+      html2canvas,
+      gsap,
+      confetti
+    };
+    
+    console.log('🛡️ MedCore Production Guard: Verifying components...');
+    Object.entries(componentsToVerify).forEach(([name, comp]) => {
+      if (!comp) {
+        console.error(`❌ Component/Module [${name}] is UNDEFINED! This triggers Error #130.`);
+      }
+    });
+  }, []);
+
   const navigate = useNavigate();
   const { bookingData, clearBooking } = useBooking();
   const { user } = useAuth();
-  const containerRef = useRef(null);
-  const checkRef = useRef(null);
   const receiptRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // حماية البيانات لتجنب أي undefined
   const doctor = bookingData?.doctor || { user: { name: 'طبيب ميدكور' } };
-  const doctorName = typeof (doctor.user?.name || doctor.name) === 'object'
-    ? 'طبيب ميدكور'
+  const doctorName = typeof (doctor.user?.name || doctor.name) === 'object' 
+    ? 'طبيب ميدكور' 
     : (doctor.user?.name || doctor.name || 'طبيب ميدكور');
+  
   const appointmentId = "MC-" + Math.random().toString(36).substr(2, 9).toUpperCase();
 
-  const formattedDate = bookingData.date
-    ? new Date(bookingData.date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric' })
-    : 'لم يتم الاختيار';
-
   useEffect(() => {
-    // Confetti burst on load
-    const duration = 3 * 1000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+    if (!bookingData?.doctor) {
+      // إذا لم تكن هناك بيانات حجز، نوجه المستخدم للبحث بعد 3 ثواني
+      const timer = setTimeout(() => {
+        navigate('/specialists');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
 
-    const randomInRange = (min, max) => Math.random() * (max - min) + min;
+    // تأثير الاحتفال
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#2563eb', '#3b82f6', '#60a5fa']
+    });
 
-    const interval = setInterval(function () {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
-      }
-
-      const particleCount = 50 * (timeLeft / duration);
-      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-    }, 250);
-
-    // GSAP Animations
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline();
-
-      tl.fromTo(checkRef.current,
-        { scale: 0, opacity: 0 },
-        { scale: 1.2, opacity: 1, duration: 0.6, ease: "back.out(1.7)" }
-      )
-        .to(checkRef.current, { scale: 1, duration: 0.2 })
-        .from(".animate-up", {
-          y: 30,
-          opacity: 0,
-          stagger: 0.2,
-          duration: 0.8,
-          ease: "power3.out"
-        }, "-=0.2");
-    }, containerRef);
-
-    return () => {
-      ctx.revert();
-      clearInterval(interval);
-    };
-  }, []);
+    // أنيميشن الدخول
+    gsap.from(".animate-up", {
+      y: 40,
+      opacity: 0,
+      duration: 1,
+      ease: "power4.out",
+      stagger: 0.2
+    });
+  }, [bookingData, navigate]);
 
   const handleDownloadAndPrint = async () => {
     if (!receiptRef.current) return;
-
+    
     try {
       setIsDownloading(true);
-
-      // Save current scroll position and scroll to top
+      
       const scrollY = window.scrollY;
       window.scrollTo(0, 0);
-
+      
       const canvas = await html2canvas(receiptRef.current, {
-        scale: 2,
-        useCORS: true,
+        scale: 2, 
+        useCORS: true, 
         backgroundColor: '#ffffff',
         logging: false,
       });
 
       window.scrollTo(0, scrollY);
 
-      // Convert to Blob for better mobile support
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          toast.error('حدث خطأ أثناء معالجة الصورة');
-          setIsDownloading(false);
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `receipt-${appointmentId}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        toast.success('تم تحميل الإيصال كصورة');
-        setIsDownloading(false);
-
-        // Open print dialog immediately after download
-        setTimeout(() => {
-          window.print();
-        }, 500);
-
-      }, 'image/png', 1.0);
-
-    } catch (error) {
-      console.error('Failed to generate receipt:', error);
-      toast.error('حدث خطأ أثناء تحميل الإيصال. يرجى المحاولة مرة أخرى.');
+      const url = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `MedCore-Receipt-${appointmentId}.png`;
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('تم تحميل الإيصال كصورة');
+    } catch (err) {
+      console.error('Download error:', err);
+      toast.error('فشل تحميل الإيصال');
+    } finally {
       setIsDownloading(false);
     }
   };
 
+  // حالة عدم وجود بيانات (Safety Guard)
+  if (!bookingData?.doctor) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
+        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+          <LucideIcons.AlertCircle size={32} />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">لا توجد بيانات حجز حالية</h2>
+        <p className="text-gray-500 mb-6">سيتم توجيهك لصفحة البحث تلقائياً...</p>
+        <Link to="/specialists" className="text-blue-600 font-bold hover:underline">اضغط هنا للانتقال فوراً</Link>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] print:bg-white pt-32 print:pt-0 pb-20 px-6 flex flex-col items-center justify-center overflow-hidden" ref={containerRef}>
-
-      {/* Success Icon */}
-      <div ref={checkRef} className="print:hidden w-24 h-24 bg-green-100 rounded-full flex items-center justify-center shadow-xl shadow-green-200 mb-8 relative">
-        <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-20" />
-        <Check size={48} className="text-green-600 stroke-[3px]" />
-      </div>
-
-      {/* Main Message */}
-      <div className="print:hidden text-center space-y-4 mb-12 max-w-lg">
-        <h1 className="animate-up text-4xl md:text-5xl font-black text-gray-900 tracking-tight">تم تأكيد الحجز!</h1>
-        <p className="animate-up text-lg text-gray-500 font-medium">
-          تم جدولة موعدك مع <span className="text-blue-600 font-bold">{doctorName}</span> بنجاح.
-        </p>
-      </div>
-
-      {/* Summary Card (Wrapper for animation) */}
-      <div className="animate-up w-full max-w-xl relative mb-12 print:mb-0 print:shadow-none">
-
-        {/* Actual Receipt Container for html2canvas & Print */}
-        <div
+    <div className="min-h-screen bg-[#f8fafc] pt-28 pb-20 flex flex-col items-center px-6">
+      
+      {/* Summary Card */}
+      <div className="animate-up w-full max-w-xl relative mb-12">
+        <div 
           ref={receiptRef}
-          id="receipt-container"
-          className="w-full bg-white rounded-[2.5rem] print:rounded-none p-8 md:p-12 border border-gray-100 print:border-none shadow-2xl shadow-blue-900/5 print:shadow-none relative"
+          className="w-full bg-white rounded-[2.5rem] p-8 md:p-12 border border-gray-100 shadow-2xl shadow-blue-900/5 relative overflow-hidden"
         >
-          {/* Receipt Header (Logo & Title) */}
-          <div className="flex justify-between items-start mb-8 pb-8 border-b border-gray-50 print:border-gray-300">
-            <div>
-              <h3 className="text-xl font-black text-gray-900">إيصال الحجز</h3>
-              <p className="text-sm font-bold text-gray-400 mt-1">عيادات ميدكور التخصصية</p>
-              <p className="text-xs text-gray-400 mt-1">{new Date().toLocaleString('ar-EG')}</p>
+          {/* Success Header */}
+          <div className="flex flex-col items-center text-center mb-10">
+            <div className="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-green-200 mb-6">
+              <SafeRender component={Check} size={40} fallback={<span>✓</span>} />
             </div>
-            <div className="text-left">
-              {/* Appointment ID Tag */}
-              <span className="text-[10px] font-mono font-black text-gray-300 uppercase tracking-widest bg-gray-50 print:bg-white px-3 py-1 rounded-full border border-gray-100 print:border-gray-400">
-                ID: {appointmentId}
-              </span>
-              <div className="mt-3 text-xs font-bold px-3 py-1 bg-green-50 print:bg-white text-green-600 print:text-black rounded-full inline-block border border-green-100 print:border-gray-400">
-                مؤكد
-              </div>
-            </div>
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">تم الحجز بنجاح!</h1>
+            <p className="text-gray-400 font-medium">رقم الموعد: <span className="text-blue-600 font-bold">{appointmentId}</span></p>
           </div>
 
           <div className="space-y-8">
-
+            
             {/* Patient & Doctor Info */}
-            <div className="bg-blue-50/30 print:bg-white rounded-2xl p-6 border border-blue-100/50 print:border-gray-300">
+            <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-100/50">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">المريض</p>
-                  <p className="text-sm font-bold text-gray-900">{user?.name || 'مريض غير مسجل'}</p>
+                  <p className="text-sm font-bold text-gray-900">{user?.name || 'مريض ميدكور'}</p>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الطبيب</p>
                   <p className="text-sm font-bold text-gray-900">{doctorName}</p>
-                  <p className="text-xs font-bold text-blue-600/70 print:text-gray-600">
+                  <p className="text-xs font-bold text-blue-600/70">
                     {typeof doctor.specialty === 'string' ? doctor.specialty : 'تخصص عام'}
                   </p>
                 </div>
               </div>
             </div>
 
+            {/* DateTime Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Date & Time */}
-              <div className="flex gap-4">
-                <div className="w-12 h-12 bg-blue-50 print:bg-white print:border print:border-gray-300 rounded-2xl flex items-center justify-center text-blue-600 print:text-gray-800 flex-shrink-0">
-                  <Calendar size={24} />
+              <div className="flex items-center gap-4 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600">
+                  <SafeRender component={Calendar} size={20} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الوقت والتاريخ</p>
-                  <p className="text-lg font-bold text-gray-900">{formattedDate}</p>
-                  <p className="text-sm font-bold text-blue-600/70 print:text-gray-600">{bookingData.time || 'صباحاً ١٠:٣٠'}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">التاريخ</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {bookingData.date ? new Date(bookingData.date).toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+                  </p>
                 </div>
               </div>
-
-              {/* Location */}
-              <div className="flex gap-4">
-                <div className="w-12 h-12 bg-blue-50 print:bg-white print:border print:border-gray-300 rounded-2xl flex items-center justify-center text-blue-600 print:text-gray-800 flex-shrink-0">
-                  <MapPin size={24} />
+              <div className="flex items-center gap-4 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-blue-600">
+                  <SafeRender component={Clock} size={20} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الموقع</p>
-                  <p className="text-lg font-bold text-gray-900">مركز ميدكور</p>
-                  <p className="text-sm font-bold text-gray-400">الشارع الرئيسي، المنطقة ٤</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">الوقت</p>
+                  <p className="text-sm font-bold text-gray-900">{bookingData.time}</p>
                 </div>
               </div>
             </div>
 
             {/* QR Code */}
-            <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-50 print:border-gray-300">
-              <div className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm">
-                <QRCode
-                  value={`https://med-core.vercel.app/verify/${appointmentId}`}
-                  size={100}
-                  level="H"
-                  className="opacity-80 print:opacity-100"
-                />
+            <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-50">
+              <div className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm min-h-[100px] flex items-center justify-center">
+                <Suspense fallback={<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />}>
+                  <QRCode 
+                    value={`https://med-core.vercel.app/verify/${appointmentId}`}
+                    size={100}
+                    level="H"
+                  />
+                </Suspense>
               </div>
-              <p className="text-[10px] font-bold text-gray-300 mt-3 tracking-widest">امسح الكود للتحقق من الحجز</p>
+              <p className="text-[10px] font-bold text-gray-300 mt-4 uppercase tracking-[0.2em]">أبرز الكود عند وصولك للمركز</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="print:hidden animate-up flex flex-col sm:flex-row items-center gap-4 w-full max-w-xl">
-        <Button
-          variant="primary"
-          onClick={() => {
-            clearBooking();
-            navigate('/dashboard'); // Or patient dashboard
-          }}
-          className="w-full sm:flex-1 py-5 rounded-[2rem] shadow-xl shadow-blue-200 font-bold"
+      {/* Actions */}
+      <div className="animate-up flex flex-col sm:flex-row gap-4 w-full max-w-xl">
+        <Button 
+          variant="primary" 
+          className="flex-1 py-5 rounded-[2rem] shadow-xl shadow-blue-200 text-sm font-bold"
+          onClick={() => navigate('/dashboard')}
         >
           العودة للوحة التحكم
-          <ArrowLeft size={20} className="mr-2" />
+          <SafeRender component={ArrowLeft} size={20} className="mr-2" />
         </Button>
-        <button
+        <button 
           onClick={handleDownloadAndPrint}
           disabled={isDownloading}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-10 py-5 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors bg-white border border-gray-100 rounded-[2rem] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-2 px-10 py-5 text-sm font-bold text-gray-500 bg-white border border-gray-100 rounded-[2rem] hover:bg-gray-50 disabled:opacity-50"
         >
           {isDownloading ? (
-            <Loader2 size={20} className="animate-spin" />
+            <SafeRender component={Loader2} className="animate-spin" size={20} />
           ) : (
-            <Download size={20} />
+            <>
+              <SafeRender component={Download} size={20} />
+              تحميل الإيصال
+            </>
           )}
-          {isDownloading ? 'جاري التجهيز...' : 'طباعة وتحميل الإيصال'}
         </button>
       </div>
-
-      {/* Back Link */}
-      <Link
-        to="/"
-        className="print:hidden animate-up flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest mt-12 hover:text-blue-600 transition-colors"
-      >
-        <ArrowRight size={14} />
-        العودة للرئيسية
-      </Link>
-
     </div>
   );
 };
