@@ -14,18 +14,19 @@ const PRODUCTION_API = 'https://backend-med-core.vercel.app/api';
 
 import getImageUrl from '../utils/imageUrl';
 
-// Export BASE_URL and getImageUrl for global use
+// Environment-aware Base URL selection
+const DEV_API = 'http://localhost:5001/api';
+const PROD_API = 'https://backend-med-core.vercel.app/api';
+
 export const BASE_URL = (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith('http')) 
   ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '') 
   : 'https://backend-med-core.vercel.app';
 
 export { getImageUrl };
-export const getFullImageUrl = getImageUrl; // Maintain backward compatibility with previous turn
+export const getFullImageUrl = getImageUrl;
 
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL.startsWith('http')) 
-    ? import.meta.env.VITE_API_URL 
-    : 'https://backend-med-core.vercel.app/api',
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? DEV_API : PROD_API),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
