@@ -223,7 +223,7 @@ const BookingConfirmationPage = () => {
             <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-50 print:border-gray-300">
               <div className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm">
                 <QRCode 
-                  value={`https://mid-core.vercel.app/verify/${appointmentId}`}
+                  value={`https://med-core.vercel.app/verify/${appointmentId}`}
                   size={100}
                   level="H"
                   className="opacity-80 print:opacity-100"

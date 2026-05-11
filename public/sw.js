@@ -6,7 +6,7 @@
  *  - Basic offline caching (App Shell strategy)
  */
 
-const CACHE_NAME = 'medcore-v1';
+const CACHE_NAME = 'medcore-v2';
 const OFFLINE_URL = '/';
 
 // Assets to cache on install (App Shell)
@@ -54,13 +54,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets: cache-first
+  // 1. Navigation requests (HTML pages) - NETWORK FIRST
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Cache the latest version
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(OFFLINE_URL)) // Offline fallback
+    );
+    return;
+  }
+
+  // 2. Static assets (JS, CSS, Images) - CACHE FIRST
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
       return fetch(event.request)
         .then((response) => {
-          // Cache successful GET responses
+          // Cache successful GET responses for future
           if (response && response.status === 200 && response.type === 'basic') {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
@@ -70,11 +85,6 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Offline fallback for navigation requests
-          if (event.request.mode === 'navigate') {
-            return caches.match(OFFLINE_URL);
-          }
-          // Return a default error response instead of undefined
           return new Response('Network error or offline', {
             status: 503,
             statusText: 'Service Unavailable',
