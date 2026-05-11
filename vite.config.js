@@ -43,20 +43,7 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        // ✅ FIX: manualChunks MUST be a function in Vite 6+ (Rolldown).
-        // The object form was silently accepted by older Rollup but throws
-        // "TypeError: manualChunks is not a function" in Rolldown.
-        manualChunks(id) {
-          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-            return 'react-vendor';
-          }
-          if (id.includes('node_modules/react-router-dom/') || id.includes('node_modules/react-router/')) {
-            return 'router';
-          }
-          if (id.includes('node_modules/gsap/') || id.includes('node_modules/canvas-confetti/')) {
-            return 'animation';
-          }
-        }
+        // Disabled manualChunks temporarily to prevent multiple React instances (Error #306)
       }
     }
   }
