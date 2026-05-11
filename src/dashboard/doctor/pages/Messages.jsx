@@ -38,7 +38,7 @@ const Messages = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [activeView, setActiveView] = useState('list'); // 'list', 'chat'
   const [error, setError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -319,8 +319,8 @@ const Messages = () => {
                             <img 
                               src={getImageUrl(msg.fileUrl)} 
                               alt="img" 
-                              className="max-w-full h-auto cursor-pointer object-cover" 
-                              onClick={() => window.open(getImageUrl(msg.fileUrl), '_blank')}
+                              className="max-w-full h-auto cursor-pointer object-cover hover:opacity-90 transition-opacity" 
+                              onClick={() => setSelectedImage(getImageUrl(msg.fileUrl))}
                               onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.src = "https://placehold.co/400x300/e2e8f0/64748b?text=Image+Unavailable";
@@ -393,6 +393,42 @@ const Messages = () => {
           </div>
         )}
       </div>
+ 
+      {/* ── Image Lightbox Modal ────────────────────────────────────────────── */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-300"
+          onClick={() => setSelectedImage(null)}
+        >
+          <button 
+            className="absolute top-6 right-6 text-white hover:text-slate-300 transition-colors z-[110]"
+            onClick={() => setSelectedImage(null)}
+          >
+            <ChevronLeft size={40} className="rotate-180" />
+          </button>
+          
+          <div className="relative max-w-5xl w-full h-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
+            <img 
+              src={selectedImage} 
+              alt="Full view" 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl animate-in zoom-in-95 duration-300" 
+            />
+            
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4">
+              <a 
+                href={selectedImage} 
+                download="medcore-image" 
+                className="bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-full backdrop-blur-md transition-all flex items-center gap-2 border border-white/20"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Download size={20} />
+                <span>حفظ الصورة</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
