@@ -18,7 +18,8 @@ import {
   User,
   MessageSquare,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Check
 } from 'lucide-react';
 import { getConversations, getMessages, sendMessageApi, uploadChatFile } from '../../../api/chatApi';
 import getImageUrl from '../../../utils/imageUrl';
@@ -78,10 +79,15 @@ const Messages = () => {
         const res = await getConversations();
         setConversations(res.data.conversations);
 
-        // Check if there's a selected conversation from navigation state
+        // Priority 1: Navigation State
         const stateConvId = location.state?.selectedConversationId;
-        if (stateConvId) {
-          const found = res.data.conversations.find(c => c._id === stateConvId);
+        // Priority 2: Session Storage (Survival on reload)
+        const savedConvId = sessionStorage.getItem('medcore_selected_chat');
+
+        const activeId = stateConvId || savedConvId;
+
+        if (activeId) {
+          const found = res.data.conversations.find(c => c._id === activeId);
           if (found) {
             setSelectedConv(found);
             setActiveView('chat');
@@ -95,6 +101,13 @@ const Messages = () => {
     };
     fetchConvs();
   }, [location.state]);
+
+  // Persist selected conversation to session storage
+  useEffect(() => {
+    if (selectedConv?._id) {
+      sessionStorage.setItem('medcore_selected_chat', selectedConv._id);
+    }
+  }, [selectedConv?._id]);
 
   // ── Fetch Messages for Selected Conversation ──────────────────────────────
   const fetchMessages = useCallback(async () => {
