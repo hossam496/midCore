@@ -158,20 +158,28 @@ const BookingConfirmationPage = () => {
     );
   }
 
+  const getDashboardLink = () => {
+    if (user?.role === 'admin') return '/admin/dashboard';
+    if (user?.role === 'doctor') return '/doctor/dashboard';
+    return '/'; // Patients go back to home
+  };
+
   return (
     <div className="min-h-screen bg-white pt-32 px-10 text-center">
-      <h1 className="text-4xl font-bold text-blue-600 mb-6">Booking Confirmed!</h1>
-      <p className="text-xl text-gray-600 mb-10">Your appointment ID is: <span className="font-bold text-gray-900">{appointmentId}</span></p>
+      <h1 className="text-4xl font-bold text-blue-600 mb-6">تم تأكيد الحجز!</h1>
+      <p className="text-xl text-gray-600 mb-10">رقم الموعد الخاص بك هو: <span className="font-bold text-gray-900">{appointmentId}</span></p>
       
       <div className="max-w-md mx-auto bg-gray-50 rounded-3xl p-8 mb-10 border border-gray-100">
-        <p className="font-bold text-gray-900 mb-2">Doctor: {doctorName}</p>
-        <p className="text-gray-500">Date: {bookingData.date || '-'}</p>
-        <p className="text-gray-500">Time: {bookingData.time || '-'}</p>
+        <p className="font-bold text-gray-900 mb-2">الطبيب: {doctorName}</p>
+        <p className="text-gray-500">التاريخ: {bookingData.date ? new Date(bookingData.date).toLocaleDateString('ar-EG') : '-'}</p>
+        <p className="text-gray-500">الوقت: {bookingData.time || '-'}</p>
       </div>
 
       <div className="flex gap-4 justify-center">
-        <Button onClick={() => navigate('/')}>Home</Button>
-        <Button variant="secondary" onClick={() => navigate('/dashboard')}>Dashboard</Button>
+        <Button onClick={() => navigate('/')}>الصفحة الرئيسية</Button>
+        <Button variant="secondary" onClick={() => navigate(getDashboardLink())}>
+          {user?.role === 'patient' || !user?.role ? 'حجوزاتي' : 'لوحة التحكم'}
+        </Button>
       </div>
     </div>
   );
