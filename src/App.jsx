@@ -27,6 +27,16 @@ const LoadingScreen = () => (
   </div>
 );
 
+// Auto-recovery for dynamic import failures (common during new deployments on Vercel)
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (e) => {
+    if (e.message && e.message.includes('Failed to fetch dynamically imported module')) {
+      console.warn('Dynamic import failed, reloading page...');
+      window.location.reload();
+    }
+  });
+}
+
 const App = () => {
   return (
     <AuthProvider>
