@@ -28,7 +28,7 @@ export const BookingProvider = ({ children }) => {
     }));
   };
 
-  const resetBooking = () => {
+  const clearBooking = () => {
     setBookingData({
       doctor: null,
       date: null,
@@ -45,7 +45,7 @@ export const BookingProvider = ({ children }) => {
   };
 
   return (
-    <BookingContext.Provider value={{ bookingData, updateBooking, updatePatientDetails, resetBooking }}>
+    <BookingContext.Provider value={{ bookingData, updateBooking, updatePatientDetails, clearBooking }}>
       {children}
     </BookingContext.Provider>
   );
