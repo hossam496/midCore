@@ -15,7 +15,7 @@ import { AuthProvider } from './context/AuthContext';
 import { BookingProvider } from './context/BookingContext';
 import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
-
+import BookingErrorBoundary from './components/BookingErrorBoundary';
 
 // Lazy load dashboard modules for performance
 const DoctorRoutes = React.lazy(() => import('./dashboard/routes/DoctorRoutes'));
@@ -96,7 +96,12 @@ const App = () => {
                   path="booking-confirmation"
                   element={
                     <ProtectedRoute>
-                      <BookingConfirmationPage />
+                      {/* ✅ Error boundary catches ANY render crash in the
+                          confirmation step — including React #306, #130, and
+                          third-party library failures (QRCode, html2canvas, confetti) */}
+                      <BookingErrorBoundary>
+                        <BookingConfirmationPage />
+                      </BookingErrorBoundary>
                     </ProtectedRoute>
                   }
                 />

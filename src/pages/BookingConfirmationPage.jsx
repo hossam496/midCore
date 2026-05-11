@@ -67,13 +67,18 @@ const BookingConfirmationPage = () => {
   const receiptRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // ✅ FIX: Stable ID generated ONCE via useState lazy initializer.
+  // Using Math.random() directly in the render body re-generates on every
+  // render and in React StrictMode (which double-invokes renders in dev).
+  const [appointmentId] = useState(
+    () => 'MC-' + Math.random().toString(36).substr(2, 9).toUpperCase()
+  );
+
   // حماية البيانات لتجنب أي undefined
   const doctor = bookingData?.doctor || { user: { name: 'طبيب ميدكور' } };
-  const doctorName = typeof (doctor.user?.name || doctor.name) === 'object' 
-    ? 'طبيب ميدكور' 
+  const doctorName = typeof (doctor.user?.name || doctor.name) === 'object'
+    ? 'طبيب ميدكور'
     : (doctor.user?.name || doctor.name || 'طبيب ميدكور');
-  
-  const appointmentId = "MC-" + Math.random().toString(36).substr(2, 9).toUpperCase();
 
   useEffect(() => {
     if (!bookingData?.doctor) {
@@ -84,22 +89,42 @@ const BookingConfirmationPage = () => {
       return () => clearTimeout(timer);
     }
 
-    // تأثير الاحتفال
-    confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#2563eb', '#3b82f6', '#60a5fa']
+    // ✅ FIX: Track mounted state to prevent state updates after unmount
+    let isMounted = true;
+
+    // تأثير الاحتفال — only run when component is actually mounted
+    const confettiTimer = setTimeout(() => {
+      if (isMounted) {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#2563eb', '#3b82f6', '#60a5fa']
+        });
+      }
+    }, 100);
+
+    // ✅ FIX: Use receiptRef instead of a CSS class selector.
+    // Targeting '.animate-up' can match elements in OTHER components
+    // if they share the same class. ref-based targeting is surgical.
+    const animCtx = gsap.context(() => {
+      if (receiptRef.current) {
+        gsap.from(receiptRef.current.querySelectorAll('.animate-up'), {
+          y: 40,
+          opacity: 0,
+          duration: 1,
+          ease: 'power4.out',
+          stagger: 0.2
+        });
+      }
     });
 
-    // أنيميشن الدخول
-    gsap.from(".animate-up", {
-      y: 40,
-      opacity: 0,
-      duration: 1,
-      ease: "power4.out",
-      stagger: 0.2
-    });
+    return () => {
+      isMounted = false;
+      clearTimeout(confettiTimer);
+      // ✅ Revert all GSAP animations created in this context on unmount
+      animCtx.revert();
+    };
   }, [bookingData, navigate]);
 
   const handleDownloadAndPrint = async () => {

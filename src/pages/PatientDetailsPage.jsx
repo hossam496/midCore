@@ -20,6 +20,17 @@ import getImageUrl from '../utils/imageUrl';
 import Button from '../components/Button';
 import PatientReviews from '../components/profile/PatientReviews';
 
+// ✅ FIX: Always provide a safe default so controlled inputs never receive
+// `undefined` as their value (which causes React to throw a controlled→uncontrolled error).
+const DEFAULT_PATIENT = {
+  fullName: '',
+  email: '',
+  phone: '',
+  dob: '',
+  gender: '',
+  reason: ''
+};
+
 const PatientDetailsPage = () => {
   const navigate = useNavigate();
   const { bookingData, updatePatientDetails, clearBooking } = useBooking();
@@ -27,8 +38,13 @@ const PatientDetailsPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Local state for immediate form feedback
-  const [formData, setFormData] = useState(bookingData.patientDetails);
+  // ✅ FIX: Use nullish coalescing — if bookingData.patientDetails is undefined
+  // (context wiped on page reload before sessionStorage fix propagates), fall back
+  // to the safe empty defaults so no input ever receives undefined.
+  const [formData, setFormData] = useState(() => ({
+    ...DEFAULT_PATIENT,
+    ...(bookingData?.patientDetails ?? {})
+  }));
 
   useEffect(() => {
     gsap.fromTo(formRef.current,
