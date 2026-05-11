@@ -259,10 +259,22 @@ const Messages = () => {
       </div>
 
       {/* Center Column: Active Chat */}
-      <div className={`flex-1 bg-white rounded-3xl border border-slate-100 shadow-sm flex-col overflow-hidden relative h-full lg:flex ${activeView === 'chat' ? 'flex w-full' : 'hidden'}`}>
+      <div className={`flex-1 bg-slate-50/30 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 flex-col overflow-hidden relative h-full lg:flex ${activeView === 'chat' ? 'flex w-full' : 'hidden'}`}>
+        {/* Subtle Medical Background Pattern */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
+          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="medical-pattern" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                <path d="M50 20v60M20 50h60" stroke="#2563eb" strokeWidth="2" />
+                <circle cx="50" cy="50" r="10" fill="none" stroke="#2563eb" strokeWidth="2" />
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#medical-pattern)" />
+          </svg>
+        </div>
         {selectedConv ? (
           <>
-            <div className="p-4 lg:p-6 border-b border-slate-50 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
+            <div className="p-4 lg:p-6 border-b border-slate-100/50 flex justify-between items-center bg-white/60 backdrop-blur-xl sticky top-0 z-20 shrink-0">
               <div className="flex items-center gap-3 lg:gap-4 overflow-hidden">
                 <button
                   onClick={() => setActiveView('list')}
@@ -271,15 +283,20 @@ const Messages = () => {
                   <ChevronLeft size={24} />
                 </button>
                 <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 border-2 border-white flex items-center justify-center font-bold text-slate-400 text-sm">
+                  <div className="w-12 h-12 rounded-[1.2rem] bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-white flex items-center justify-center font-black text-blue-600 text-base shadow-sm">
                     {activeOther?.name.charAt(0)}
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-sm lg:text-base font-bold text-slate-800 truncate">{activeOther?.name}</h3>
+                  <h3 className="text-sm lg:text-base font-black text-slate-800 truncate tracking-tight">{activeOther?.name}</h3>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">متصل الآن</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-1.5 lg:gap-2">
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     if (window.innerWidth > 1024) {
@@ -288,35 +305,35 @@ const Messages = () => {
                       setActiveView('details');
                     }
                   }}
-                  className={`p-2 lg:p-2.5 rounded-xl transition-all shadow-sm ${(showDetails || activeView === 'details') ? 'bg-blue-600 text-white shadow-blue-600/20' : 'bg-slate-50 text-slate-500 hover:bg-blue-50'}`}
+                  className={`p-2.5 rounded-xl transition-all shadow-sm ${(showDetails || activeView === 'details') ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white border border-slate-100 text-slate-500 hover:bg-slate-50'}`}
                 >
                   <User size={18} />
                 </button>
-                <button className="p-2.5 bg-slate-50 text-slate-500 rounded-xl hover:bg-slate-100 transition-all shadow-sm">
+                <button className="p-2.5 bg-white border border-slate-100 text-slate-500 rounded-xl hover:bg-slate-50 transition-all shadow-sm">
                   <MoreVertical size={18} />
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6 flex flex-col scroll-smooth">
+            <div className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-8 flex flex-col scroll-smooth z-10 relative custom-scrollbar">
               <div className="flex justify-center mb-4">
-                <span className="text-[9px] lg:text-[10px] font-bold text-slate-400 bg-slate-50 px-4 py-1.5 rounded-full uppercase tracking-[0.2em]">Medical Consultation</span>
+                <span className="text-[10px] font-black text-slate-400 bg-white border border-slate-100 px-6 py-2 rounded-2xl uppercase tracking-[0.2em] shadow-sm">Medical Consultation</span>
               </div>
 
               {messages.map((msg, i) => {
                 const isMe = msg?.sender?._id === user?._id || msg?.sender === user?._id;
 
                 return (
-                  <div key={msg?._id || i} className={`flex gap-3 lg:gap-4 max-w-[85%] lg:max-w-[80%] ${isMe ? 'ml-auto flex-row-reverse' : ''} message-bubble`}>
-                    {isMe && (
-                      <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold mt-1 shadow-lg shadow-blue-600/20 uppercase shrink-0">
-                        {user?.name?.charAt(0) || 'U'}
+                  <div key={msg?._id || i} className={`flex gap-3 lg:gap-4 max-w-[85%] lg:max-w-[75%] ${isMe ? 'ml-auto flex-row-reverse' : ''} message-bubble`}>
+                    {!isMe && (
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-500 text-[11px] font-black mt-1 shadow-sm border border-white shrink-0 uppercase">
+                        {activeOther?.name?.charAt(0) || 'P'}
                       </div>
                     )}
-                    <div className={`space-y-2 ${isMe ? 'items-end' : ''}`}>
-                      <div className={`p-3 lg:p-4 rounded-2xl border shadow-sm ${isMe
-                        ? 'bg-blue-600 border-blue-500 text-white rounded-tr-none shadow-blue-600/10'
-                        : 'bg-slate-50 border-slate-100 text-slate-600 rounded-tl-none'
+                    <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                      <div className={`p-3.5 lg:p-5 rounded-[1.8rem] shadow-md transition-all hover:shadow-lg ${isMe
+                        ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-tr-none shadow-blue-500/20 border border-blue-400/20'
+                        : 'bg-white border border-slate-100 text-slate-700 rounded-tl-none shadow-slate-200/50'
                         }`}>
                         {msg.messageType === 'image' && (
                           <div className="mb-3 overflow-hidden rounded-xl border border-white/10 shadow-sm">
@@ -350,15 +367,16 @@ const Messages = () => {
                           </div>
                         )}
 
-                        <p className="text-xs lg:text-sm leading-relaxed font-medium">
+                        <p className="text-xs lg:text-[14px] leading-relaxed font-semibold">
                           {msg.text}
                         </p>
                       </div>
-                      <div className={`flex items-center gap-2 px-2 ${isMe ? 'justify-end' : ''}`}>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      <div className={`flex items-center gap-2 mt-2 px-3 ${isMe ? 'justify-end' : ''}`}>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60">
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {isMe && ' • Sent'}
+                          {isMe && ' • SENT'}
                         </span>
+                        {isMe && <Check size={12} className="text-blue-500" />}
                       </div>
                     </div>
                   </div>
@@ -368,8 +386,8 @@ const Messages = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 lg:p-6 bg-white border-t border-slate-50 shrink-0">
-              <form onSubmit={handleSendMessage} className="bg-slate-50 rounded-2xl p-1.5 lg:p-2 flex items-center gap-2 lg:gap-3 shadow-inner border border-slate-100">
+            <div className="p-4 lg:p-8 bg-white/80 backdrop-blur-2xl border-t border-slate-100 shrink-0 z-20">
+              <form onSubmit={handleSendMessage} className="bg-white rounded-[2rem] p-1.5 lg:p-2.5 flex items-center gap-2 lg:gap-4 shadow-2xl shadow-slate-200/50 border border-slate-100 focus-within:ring-4 focus-within:ring-blue-500/10 transition-all">
                 <div className="flex gap-0.5 lg:gap-1 pl-1 lg:pl-2 relative" ref={emojiPickerRef}>
                   <input
                     type="file"
@@ -381,7 +399,7 @@ const Messages = () => {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
-                    className="p-2 lg:p-2.5 text-slate-400 hover:text-blue-600 transition-colors disabled:opacity-50"
+                    className="p-2.5 text-slate-400 hover:text-blue-600 transition-all hover:bg-blue-50 rounded-xl disabled:opacity-50"
                   >
                     {isUploading ? (
                       <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -392,7 +410,7 @@ const Messages = () => {
                   <button
                     type="button"
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className={`p-2 lg:p-2.5 transition-colors ${showEmojiPicker ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}
+                    className={`p-2.5 transition-all rounded-xl ${showEmojiPicker ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:text-blue-600 hover:bg-blue-50'}`}
                   >
                     <Smile size={20} />
                   </button>
@@ -419,20 +437,20 @@ const Messages = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder="Type a message..."
+                  placeholder="اكتب رسالتك هنا..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  className="flex-1 bg-transparent border-none py-2 lg:py-3 text-xs lg:text-sm font-medium outline-none text-slate-800 placeholder:text-slate-400"
+                  className="flex-1 bg-transparent border-none py-2 lg:py-3 text-sm font-bold outline-none text-slate-700 placeholder:text-slate-300"
                 />
                 <button
                   type="submit"
                   disabled={!newMessage.trim()}
-                  className="p-2.5 lg:p-3 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                  className="w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[1.2rem] shadow-xl shadow-blue-600/30 hover:scale-105 hover:rotate-3 active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 disabled:grayscale disabled:scale-100 disabled:rotate-0"
                 >
-                  <Send size={18} />
+                  <Send size={22} className="rotate-[-10deg] translate-x-0.5" />
                 </button>
               </form>
-              <p className="text-center text-[9px] font-bold text-slate-300 uppercase tracking-[0.2em] mt-3">All messages are end-to-end encrypted.</p>
+              <p className="text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] mt-5">All messages are end-to-end encrypted.</p>
             </div>
           </>
         ) : (
@@ -462,36 +480,38 @@ const Messages = () => {
               <h4 className="font-bold text-slate-800">Patient Profile</h4>
             </div>
 
-            <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm text-center relative overflow-hidden group shrink-0">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity">
-                <Activity size={24} className="text-blue-600" />
+            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 text-center relative overflow-hidden group shrink-0">
+              <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-100 transition-opacity">
+                <Activity size={32} className="text-blue-600" />
               </div>
-              <div className="relative inline-block mb-4">
-                <div className="w-24 h-24 rounded-[2rem] bg-blue-50 text-blue-600 flex items-center justify-center text-3xl font-bold border-4 border-white shadow-xl">
+              <div className="relative inline-block mb-6">
+                <div className="w-28 h-28 rounded-[2.2rem] bg-gradient-to-br from-blue-50 to-indigo-50 text-blue-600 flex items-center justify-center text-4xl font-black border-4 border-white shadow-2xl">
                   {activeOther?.name.charAt(0)}
                 </div>
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 border-4 border-white rounded-full"></div>
               </div>
-              <h4 className="text-lg font-bold text-slate-800">{activeOther?.name}</h4>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Patient ID: #MC-{activeOther?._id.slice(-6).toUpperCase()}</p>
+              <h4 className="text-xl font-black text-slate-800 tracking-tight">{activeOther?.name}</h4>
+              <p className="text-[10px] font-black text-blue-600/50 uppercase tracking-[0.2em] mt-2">Patient ID: #MC-{activeOther?._id.slice(-6).toUpperCase()}</p>
 
-              <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-slate-50">
-                <div className="text-center">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Age</p>
-                  <p className="text-sm font-bold text-slate-800 mt-1">{activeOther?.dob ? new Date().getFullYear() - new Date(activeOther.dob).getFullYear() : '28'}</p>
+              <div className="grid grid-cols-3 gap-2 mt-10 pt-8 border-t border-slate-50">
+                <div className="text-center px-2">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Age</p>
+                  <p className="text-sm font-black text-slate-800 mt-1">{activeOther?.dob ? new Date().getFullYear() - new Date(activeOther.dob).getFullYear() : '28'}</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Blood</p>
-                  <p className="text-sm font-bold text-slate-800 mt-1">A+</p>
+                <div className="text-center px-2 border-x border-slate-50">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Blood</p>
+                  <p className="text-sm font-black text-red-500 mt-1">A+</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Height</p>
-                  <p className="text-sm font-bold text-slate-800 mt-1">168cm</p>
+                <div className="text-center px-2">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Height</p>
+                  <p className="text-sm font-black text-slate-800 mt-1">168cm</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm text-center">
-               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Profile details are managed by the admin.</p>
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-[2.5rem] shadow-2xl shadow-slate-900/10 text-center">
+               <ClipboardList className="mx-auto mb-4 text-blue-400 opacity-50" size={24} />
+               <p className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] leading-relaxed">Profile details are managed by the medical administration office.</p>
             </div>
           </>
         ) : (
