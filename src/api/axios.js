@@ -20,14 +20,26 @@ const axiosInstance = axios.create({
   timeout: 20000,
 });
 
-// Response Interceptor for global error handling
+// Response Interceptor for global error handling and retries
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const { config, response } = error;
+    
+    // Retry logic for Network Errors or 5xx errors
+    if (!config || !config.retry) config.retry = 0;
+    
+    if (config.retry < 3 && (!response || response.status >= 500)) {
+      config.retry += 1;
+      const delay = Math.pow(2, config.retry) * 1000; // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return axiosInstance(config);
+    }
+
     if (import.meta.env.DEV) {
       console.error(
-        `[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
-        error.response?.status,
+        `[API Error] ${error.config?.method?.toUpperCase() || '??'} ${error.config?.url || '??'}`,
+        error.response?.status || 'No Status',
         error.response?.data?.message || error.message
       );
     }
