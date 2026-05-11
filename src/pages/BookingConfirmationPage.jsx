@@ -17,7 +17,7 @@ import html2canvas from 'html2canvas';
 import toast from 'react-hot-toast';
 import QRCode from 'react-qr-code';
 import { useBooking } from '../context/BookingContext';
-import Button from '../components/Button';
+import Button from '../components/Button.jsx';
 import { useAuth } from '../context/AuthContext';
 
 const BookingConfirmationPage = () => {
@@ -30,8 +30,8 @@ const BookingConfirmationPage = () => {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const doctor = bookingData?.doctor || { user: { name: 'طبيب ميدكور' } };
-  const doctorName = typeof (doctor.user?.name || doctor.name) === 'object' 
-    ? 'طبيب ميدكور' 
+  const doctorName = typeof (doctor.user?.name || doctor.name) === 'object'
+    ? 'طبيب ميدكور'
     : (doctor.user?.name || doctor.name || 'طبيب ميدكور');
   const appointmentId = "MC-" + Math.random().toString(36).substr(2, 9).toUpperCase();
 
@@ -85,17 +85,17 @@ const BookingConfirmationPage = () => {
 
   const handleDownloadAndPrint = async () => {
     if (!receiptRef.current) return;
-    
+
     try {
       setIsDownloading(true);
-      
+
       // Save current scroll position and scroll to top
       const scrollY = window.scrollY;
       window.scrollTo(0, 0);
-      
+
       const canvas = await html2canvas(receiptRef.current, {
-        scale: 2, 
-        useCORS: true, 
+        scale: 2,
+        useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
       });
@@ -117,7 +117,7 @@ const BookingConfirmationPage = () => {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        
+
         toast.success('تم تحميل الإيصال كصورة');
         setIsDownloading(false);
 
@@ -154,9 +154,9 @@ const BookingConfirmationPage = () => {
 
       {/* Summary Card (Wrapper for animation) */}
       <div className="animate-up w-full max-w-xl relative mb-12 print:mb-0 print:shadow-none">
-        
+
         {/* Actual Receipt Container for html2canvas & Print */}
-        <div 
+        <div
           ref={receiptRef}
           id="receipt-container"
           className="w-full bg-white rounded-[2.5rem] print:rounded-none p-8 md:p-12 border border-gray-100 print:border-none shadow-2xl shadow-blue-900/5 print:shadow-none relative"
@@ -180,22 +180,22 @@ const BookingConfirmationPage = () => {
           </div>
 
           <div className="space-y-8">
-            
+
             {/* Patient & Doctor Info */}
             <div className="bg-blue-50/30 print:bg-white rounded-2xl p-6 border border-blue-100/50 print:border-gray-300">
-               <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">المريض</p>
-                    <p className="text-sm font-bold text-gray-900">{user?.name || 'مريض غير مسجل'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الطبيب</p>
-                    <p className="text-sm font-bold text-gray-900">{doctorName}</p>
-                    <p className="text-xs font-bold text-blue-600/70 print:text-gray-600">
-                      {typeof doctor.specialty === 'string' ? doctor.specialty : 'تخصص عام'}
-                    </p>
-                  </div>
-               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">المريض</p>
+                  <p className="text-sm font-bold text-gray-900">{user?.name || 'مريض غير مسجل'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الطبيب</p>
+                  <p className="text-sm font-bold text-gray-900">{doctorName}</p>
+                  <p className="text-xs font-bold text-blue-600/70 print:text-gray-600">
+                    {typeof doctor.specialty === 'string' ? doctor.specialty : 'تخصص عام'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -227,7 +227,7 @@ const BookingConfirmationPage = () => {
             {/* QR Code */}
             <div className="flex flex-col items-center justify-center pt-8 border-t border-gray-50 print:border-gray-300">
               <div className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm">
-                <QRCode 
+                <QRCode
                   value={`https://med-core.vercel.app/verify/${appointmentId}`}
                   size={100}
                   level="H"
@@ -253,7 +253,7 @@ const BookingConfirmationPage = () => {
           العودة للوحة التحكم
           <ArrowLeft size={20} className="mr-2" />
         </Button>
-        <button 
+        <button
           onClick={handleDownloadAndPrint}
           disabled={isDownloading}
           className="w-full sm:w-auto flex items-center justify-center gap-2 px-10 py-5 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors bg-white border border-gray-100 rounded-[2rem] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
