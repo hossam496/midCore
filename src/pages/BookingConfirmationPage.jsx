@@ -29,7 +29,10 @@ const BookingConfirmationPage = () => {
   const receiptRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const doctor = bookingData.doctor || { user: { name: 'Dr. Sarah Johnson' } };
+  const doctor = bookingData?.doctor || { user: { name: 'طبيب ميدكور' } };
+  const doctorName = typeof (doctor.user?.name || doctor.name) === 'object' 
+    ? 'طبيب ميدكور' 
+    : (doctor.user?.name || doctor.name || 'طبيب ميدكور');
   const appointmentId = "MC-" + Math.random().toString(36).substr(2, 9).toUpperCase();
 
   const formattedDate = bookingData.date
@@ -145,7 +148,7 @@ const BookingConfirmationPage = () => {
       <div className="print:hidden text-center space-y-4 mb-12 max-w-lg">
         <h1 className="animate-up text-4xl md:text-5xl font-black text-gray-900 tracking-tight">تم تأكيد الحجز!</h1>
         <p className="animate-up text-lg text-gray-500 font-medium">
-          تم جدولة موعدك مع <span className="text-blue-600 font-bold">{doctor.user?.name || doctor.name}</span> بنجاح.
+          تم جدولة موعدك مع <span className="text-blue-600 font-bold">{doctorName}</span> بنجاح.
         </p>
       </div>
 
@@ -187,8 +190,10 @@ const BookingConfirmationPage = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">الطبيب</p>
-                    <p className="text-sm font-bold text-gray-900">{doctor.user?.name || doctor.name}</p>
-                    <p className="text-xs font-bold text-blue-600/70 print:text-gray-600">{doctor.specialty || 'تخصص عام'}</p>
+                    <p className="text-sm font-bold text-gray-900">{doctorName}</p>
+                    <p className="text-xs font-bold text-blue-600/70 print:text-gray-600">
+                      {typeof doctor.specialty === 'string' ? doctor.specialty : 'تخصص عام'}
+                    </p>
                   </div>
                </div>
             </div>
