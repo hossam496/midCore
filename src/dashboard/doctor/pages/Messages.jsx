@@ -315,8 +315,17 @@ const Messages = () => {
                         )}
 
                         {msg.messageType === 'image' && (
-                          <div className="mb-2 overflow-hidden rounded-lg">
-                            <img src={getImageUrl(msg.fileUrl)} alt="img" className="max-w-full h-auto cursor-pointer" onClick={() => window.open(getImageUrl(msg.fileUrl), '_blank')} />
+                          <div className="mb-2 overflow-hidden rounded-lg bg-slate-100 min-h-[100px] flex items-center justify-center">
+                            <img 
+                              src={getImageUrl(msg.fileUrl)} 
+                              alt="img" 
+                              className="max-w-full h-auto cursor-pointer object-cover" 
+                              onClick={() => window.open(getImageUrl(msg.fileUrl), '_blank')}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "https://placehold.co/400x300/e2e8f0/64748b?text=Image+Unavailable";
+                              }}
+                            />
                           </div>
                         )}
 

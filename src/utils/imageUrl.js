@@ -38,8 +38,8 @@ export const getImageUrl = (path) => {
     return `${BASE_URL}${relativePath.startsWith('/') ? '' : '/'}${relativePath}`;
   }
 
-  // If it's already a valid absolute URL (e.g. Google avatar), return as is
-  if (path.startsWith("http")) {
+  // If it's already a valid absolute URL (e.g. Google avatar) or a Data URI (Base64), return as is
+  if (path.startsWith("http") || path.startsWith("data:")) {
     return path;
   }
 
