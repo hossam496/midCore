@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Pusher from 'pusher-js';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
@@ -11,6 +12,7 @@ export const useSocket = () => useContext(SocketContext);
 
 export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { addNotification } = useNotifications();
   const [pusher, setPusher] = useState(null);
   const [channel, setChannel] = useState(null);
@@ -47,7 +49,13 @@ export const SocketProvider = ({ children }) => {
         addNotification(notification);
 
         toast.custom((t) => (
-          <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-2xl pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden border border-slate-100`}>
+          <div 
+            onClick={() => {
+              if (notification.link) navigate(notification.link);
+              toast.dismiss(t.id);
+            }}
+            className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-2xl pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden border border-slate-100 cursor-pointer hover:shadow-xl transition-all`}
+          >
              <div className="flex-1 w-0 p-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 pt-0.5">
@@ -65,8 +73,11 @@ export const SocketProvider = ({ children }) => {
             </div>
             <div className="flex border-l border-slate-100">
               <button
-                onClick={() => toast.dismiss(t.id)}
-                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-semibold text-blue-600 hover:bg-slate-50 focus:outline-none transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toast.dismiss(t.id);
+                }}
+                className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-semibold text-slate-500 hover:bg-slate-50 focus:outline-none transition-colors"
               >
                 إغلاق
               </button>
