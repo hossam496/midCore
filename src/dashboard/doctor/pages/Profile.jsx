@@ -97,45 +97,21 @@ const Profile = () => {
     setFormData({ ...formData, [field]: formData[field].filter((_, i) => i !== index) });
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // 1. Validation (File size)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File is too large! Maximum size is 5MB.');
+    if (file.size > 2 * 1024 * 1024) {
+      alert('الصورة كبيرة جداً! الحد الأقصى هو 2 ميجابايت لضمان الحفظ في قاعدة البيانات.');
       return;
     }
 
-    // 2. Show Preview immediately
-    const previewUrl = URL.createObjectURL(file);
-    const previousImage = formData.image; // Backup for fallback
-    setFormData((prev) => ({ ...prev, image: previewUrl }));
-
-    const data = new FormData();
-    data.append('image', file);
-
-    try {
-      setUploadingImage(true);
-      const res = await uploadDoctorImage(data);
-      if (res.data.success) {
-        // Only save the relative path to the database (e.g., /doctors/image.jpg)
-        // The frontend will prefix it with BASE_URL during rendering
-        const relativeImageUrl = res.data.imageUrl;
-        setFormData((prev) => ({ ...prev, image: relativeImageUrl }));
-        updateUser({ image: relativeImageUrl });
-      }
-    } catch (err) {
-      console.error('Failed to upload image', err);
-      // Fallback to previous image on failure
-      setFormData((prev) => ({ ...prev, image: previousImage }));
-      const errorMsg = err.response?.data?.message || 'Upload failed. Please check your connection and try again.';
-      alert(errorMsg);
-    } finally {
-      setUploadingImage(false);
-      // Clean up the object URL to avoid memory leaks
-      URL.revokeObjectURL(previewUrl);
-    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result;
+      setFormData((prev) => ({ ...prev, image: base64String }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
