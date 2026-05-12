@@ -6,7 +6,9 @@ import PWAInstallBanner from '../components/PWAInstallBanner';
 
 const MainLayout = () => {
   const location = useLocation();
-  const isChatPage = location.pathname.includes('/messages');
+  // Patient chat: /messages and deep links /chat/:id (both reuse Messages; hide site footer)
+  const isChatPage =
+    location.pathname.includes('/messages') || location.pathname.startsWith('/chat/');
 
   return (
     <div className="min-h-screen bg-white selection:bg-blue-100 selection:text-blue-900 flex flex-col">
