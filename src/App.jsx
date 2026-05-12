@@ -13,6 +13,7 @@ import BookingConfirmationPage from './pages/BookingConfirmationPage';
 import PatientMessagesPage from './pages/PatientMessagesPage';
 import { AuthProvider } from './context/AuthContext';
 import { BookingProvider } from './context/BookingContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { PushMessagingProvider } from './context/PushMessagingContext';
 import { SocketProvider } from './context/SocketContext';
 import { Toaster } from 'react-hot-toast';
