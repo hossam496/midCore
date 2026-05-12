@@ -21,13 +21,23 @@ export const requestNotificationPermission = async () => {
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
+      // Check if serviceWorker is supported
+      if (!('serviceWorker' in navigator)) {
+        console.warn('Service Worker not supported');
+        return;
+      }
+
+      // Explicitly register the service worker to ensure it's active
+      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      
       // Get FCM Token
       const token = await getToken(messaging, {
-        vapidKey: 'YOUR_VAPID_KEY' // Get this from Firebase Console -> Cloud Messaging -> Web Configuration
+        serviceWorkerRegistration: registration,
+        vapidKey: 'YOUR_VAPID_KEY' // REPLACE WITH YOUR ACTUAL VAPID KEY
       });
 
       if (token) {
-        console.log('FCM Token:', token);
+        console.log('FCM Token generated successfully');
         // Save token to backend
         await axios.patch('/users/update-fcm-token', { token });
         return token;
