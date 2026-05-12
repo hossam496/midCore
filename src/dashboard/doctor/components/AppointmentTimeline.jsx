@@ -3,43 +3,37 @@ import { Clock, ExternalLink, ChevronRight, Video, FileText, Activity, User } fr
 import { getAppointments } from '../../../api/appointmentApi';
 import getImageUrl from '../../../utils/imageUrl';
 
-const AppointmentTimeline = () => {
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
+const AppointmentTimeline = ({ appointments: rawAppointments = [] }) => {
+  const [mappedAppointments, setMappedAppointments] = useState([]);
 
   useEffect(() => {
-    const fetchTimeline = async () => {
-      try {
-        const res = await getAppointments();
-        // Filter for today's appointments
-        const today = new Date().toLocaleDateString();
-        const todayAppts = res.data.appointments.filter(
-          apt => new Date(apt.date).toLocaleDateString() === today
-        );
-        
-        const mapped = todayAppts.map((apt, index) => ({
-          id: apt._id,
-          patient: apt.patient?.name,
-          time: apt.timeSlot,
-          type: apt.reason || 'Consultation',
-          status: apt.status,
-          action: apt.status === 'in-progress' ? 'Join Consultation' : 'Prepare Notes',
-          actionIcon: apt.status === 'in-progress' ? Video : FileText,
-          active: apt.status === 'in-progress' || index === 0, // Make the first one active if none in progress
-          image: null // Add random avatar if needed
-        }));
+    // Filter for today's appointments
+    const today = new Date().toLocaleDateString();
+    const todayAppts = rawAppointments.filter(
+      apt => new Date(apt.date).toLocaleDateString() === today
+    );
+    
+    const mapped = todayAppts.map((apt, index) => ({
+      id: apt._id,
+      patient: apt.patient?.name,
+      time: apt.timeSlot,
+      type: apt.reason || 'Consultation',
+      status: apt.status,
+      action: apt.status === 'in-progress' ? 'Join Consultation' : 'Prepare Notes',
+      actionIcon: apt.status === 'in-progress' ? Video : FileText,
+      active: apt.status === 'in-progress' || index === 0, 
+      image: null 
+    }));
 
-        setAppointments(mapped);
-      } catch (err) {
-        console.error('Failed to fetch timeline appointments', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTimeline();
-  }, []);
+    setMappedAppointments(mapped);
+  }, [rawAppointments]);
 
-  if (loading) return <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[600px] flex items-center justify-center font-bold text-slate-400">Loading Timeline...</div>;
+  // Loading is now handled by the parent Dashboard
+  if (!rawAppointments || rawAppointments.length === 0 && mappedAppointments.length === 0) {
+     return <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[600px] flex items-center justify-center font-bold text-slate-400 text-center">
+       No appointments scheduled for today.
+     </div>;
+  }
 
   return (
     <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[600px] flex flex-col">
@@ -54,11 +48,11 @@ const AppointmentTimeline = () => {
         {/* Vertical Line */}
         <div className="absolute left-[23px] top-4 bottom-4 w-[1px] bg-slate-100"></div>
 
-        {appointments.length === 0 && (
+        {mappedAppointments.length === 0 && (
           <p className="text-slate-400 font-medium">No appointments scheduled for today.</p>
         )}
 
-        {appointments.map((apt) => (
+        {mappedAppointments.map((apt) => (
           <div key={apt.id} className="relative">
             {/* Timeline Dot/Icon */}
             <div className={`absolute -left-12 top-10 w-12 h-12 flex items-center justify-center z-10`}>

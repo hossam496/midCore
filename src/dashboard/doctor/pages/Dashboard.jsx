@@ -9,20 +9,28 @@ import { useAuth } from '../../../context/AuthContext';
 const Dashboard = () => {
   const { user } = useAuth();
   const [statsData, setStatsData] = useState(null);
+  const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const res = await getDoctorStats();
-        setStatsData(res.data.stats);
+        setLoading(true);
+        // Fetch all data in parallel
+        const [statsRes, appointmentsRes] = await Promise.all([
+          getDoctorStats(),
+          getAppointments()
+        ]);
+
+        setStatsData(statsRes.data.stats);
+        setAppointments(appointmentsRes.data.appointments);
       } catch (err) {
-        console.error('Failed to fetch doctor stats:', err);
+        console.error('Failed to fetch dashboard data:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchStats();
+    fetchDashboardData();
   }, []);
 
   const stats = [
@@ -70,10 +78,10 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 content-section">
-          <AppointmentTimeline />
+          <AppointmentTimeline appointments={appointments} />
         </div>
         <div className="content-section">
-          <RecentPatients />
+          <RecentPatients appointments={appointments} />
         </div>
       </div>
     </div>

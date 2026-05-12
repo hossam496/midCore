@@ -2,41 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { MoreVertical, ExternalLink, Image } from 'lucide-react';
 import { getAppointments } from '../../../api/appointmentApi';
 
-const RecentPatients = () => {
+const RecentPatients = ({ appointments = [] }) => {
   const [patients, setPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchRecent = async () => {
-      try {
-        const res = await getAppointments();
-        const appts = res.data.appointments;
-        
-        // Extract unique patients from appointments
-        const uniquePatientsMap = new Map();
-        appts.forEach(apt => {
-          if (apt.patient && !uniquePatientsMap.has(apt.patient._id)) {
-            uniquePatientsMap.set(apt.patient._id, {
-              id: apt.patient._id.substring(0, 6).toUpperCase(),
-              name: apt.patient.name,
-              lastVisit: new Date(apt.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-              reason: apt.reason || 'Consultation',
-            });
-          }
+    // Extract unique patients from appointments
+    const uniquePatientsMap = new Map();
+    appointments.forEach(apt => {
+      if (apt.patient && !uniquePatientsMap.has(apt.patient._id)) {
+        uniquePatientsMap.set(apt.patient._id, {
+          id: apt.patient._id.substring(0, 6).toUpperCase(),
+          name: apt.patient.name,
+          lastVisit: new Date(apt.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          reason: apt.reason || 'Consultation',
         });
-
-        // Take only top 5 recent patients
-        setPatients(Array.from(uniquePatientsMap.values()).slice(0, 5));
-      } catch (err) {
-        console.error('Failed to fetch recent patients', err);
-      } finally {
-        setLoading(false);
       }
-    };
-    fetchRecent();
-  }, []);
+    });
 
-  if (loading) return <div className="p-6 bg-white rounded-3xl shadow-sm border border-slate-100 h-full flex items-center justify-center text-slate-400 font-bold">Loading...</div>;
+    // Take only top 5 recent patients
+    setPatients(Array.from(uniquePatientsMap.values()).slice(0, 5));
+  }, [appointments]);
+
+  // Loading is handled by Dashboard.jsx
+  if (!appointments || appointments.length === 0 && patients.length === 0) {
+    return <div className="p-6 bg-white rounded-3xl shadow-sm border border-slate-100 h-full flex items-center justify-center text-slate-400 font-bold">No recent patients.</div>;
+  }
 
   return (
     <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col h-full">
