@@ -88,25 +88,25 @@ export const SocketProvider = ({ children }) => {
       });
 
       return () => {
-        try {
-          if (userChannel) {
-            userChannel.unbind_all();
+        if (pusherInstance) {
+          try {
+            if (userChannel) userChannel.unbind_all();
+            if (pusherInstance.connection.state !== 'disconnected') {
+               pusherInstance.disconnect();
+            }
+          } catch (error) {
+            // Cleanup silently
           }
-          if (pusherInstance && pusherInstance.connection.state !== 'disconnected') {
-            pusherInstance.unsubscribe(`user-${user._id}`);
-            pusherInstance.disconnect();
-          }
-        } catch (error) {
-          // Silently handle cleanup race conditions
         }
       };
     }
   }, [user, addNotification]);
 
   const playNotificationSound = () => {
+    // Suppress sound error if file is missing
     try {
       const audio = new Audio('/notification.mp3');
-      audio.play();
+      audio.play().catch(() => { /* Ignore sound errors */ });
     } catch (error) {}
   };
 
