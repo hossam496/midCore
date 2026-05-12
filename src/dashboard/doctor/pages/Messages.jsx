@@ -106,9 +106,21 @@ const Messages = () => {
     if (selectedConv?._id) {
       console.log('🔄 Fetching messages for:', selectedConv._id);
       sessionStorage.setItem('medcore_selected_chat', selectedConv._id);
+      
+      // OPTIMISTIC UPDATE: Clear unread count locally for this user
+      setConversations(prev => prev.map(c => {
+        if (c._id === selectedConv._id) {
+          return {
+            ...c,
+            unreadCount: { ...c.unreadCount, [user._id]: 0 }
+          };
+        }
+        return c;
+      }));
+
       fetchMessages(selectedConv._id);
     }
-  }, [selectedConv?._id, fetchMessages]);
+  }, [selectedConv?._id, fetchMessages, user._id]);
 
   // ── Pusher Event Listeners ──────────────────────────────────────────────────
   useEffect(() => {
