@@ -179,7 +179,7 @@ const Profile = () => {
                   accept="image/png, image/jpeg, image/jpg, image/webp"
                 />
               </div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center mt-2">JPG, PNG or WEBP. Max 20MB.</p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center mt-2">JPG, PNG or WEBP. Max 2MB.</p>
             </div>
 
             <div className="w-full md:w-2/3 space-y-6">
