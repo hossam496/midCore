@@ -88,9 +88,11 @@ export const SocketProvider = ({ children }) => {
       });
 
       return () => {
-        userChannel.unbind_all();
-        pusherInstance.unsubscribe(`user-${user._id}`);
-        pusherInstance.disconnect();
+        if (pusherInstance) {
+          userChannel.unbind_all();
+          pusherInstance.unsubscribe(`user-${user._id}`);
+          pusherInstance.disconnect();
+        }
       };
     }
   }, [user, addNotification]);
