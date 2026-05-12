@@ -92,12 +92,12 @@ export const SocketProvider = ({ children }) => {
           if (userChannel) {
             userChannel.unbind_all();
           }
-          if (pusherInstance) {
+          if (pusherInstance && pusherInstance.connection.state !== 'disconnected') {
             pusherInstance.unsubscribe(`user-${user._id}`);
             pusherInstance.disconnect();
           }
         } catch (error) {
-          console.warn('Pusher cleanup warning:', error);
+          // Silently handle cleanup race conditions
         }
       };
     }
