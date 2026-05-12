@@ -14,5 +14,9 @@ export const loginUser = (data) =>
 export const logoutUser = () =>
   api.post('/auth/logout');
 
+/** Used on app load — always 200 with user or null (no 401 in DevTools). */
+export const checkSession = () =>
+  api.get('/auth/session');
+
 export const getMe = () =>
   api.get('/auth/me');

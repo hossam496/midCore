@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { loginUser, logoutUser, getMe, registerUser } from '../api/authApi';
+import { loginUser, logoutUser, checkSession, registerUser } from '../api/authApi';
 import { unsubscribeFromPush } from '../utils/pushNotifications';
 
 
@@ -11,21 +11,22 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true); // true until we verify session
 
   /**
-   * On app load: call /api/auth/me to verify the HTTP-only cookie.
-   * This is the only reliable way — we cannot read the cookie from JS.
+   * On app load: GET /api/auth/session (always 200, user or null).
+   * Avoids /auth/me 401 noise in the browser when no cookie is present.
    */
   useEffect(() => {
     const verifySession = async () => {
       try {
-        const res = await getMe();
-        setUser(res.data.user);
-        setIsAuthenticated(true);
-      } catch (error) {
-        // Cookie invalid or missing — user is logged out
-        // Suppress 401 errors in console as they're expected when not logged in
-        if (error.response?.status !== 401) {
-          console.error('Session verification failed:', error.message);
+        const res = await checkSession();
+        if (res.data.user) {
+          setUser(res.data.user);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
         }
+      } catch (error) {
+        console.error('Session verification failed:', error.message);
         setUser(null);
         setIsAuthenticated(false);
       } finally {
