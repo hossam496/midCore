@@ -352,7 +352,9 @@ const Messages = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-1">
-                      <h4 className={`font-bold truncate ${isActive ? 'text-blue-900' : 'text-slate-800'}`}>{other?.name}</h4>
+                      <h4 className={`font-bold truncate ${isActive ? 'text-blue-900' : 'text-slate-800'}`}>
+                        {other?.name || 'مستخدم مدكور'}
+                      </h4>
                       <span className="text-[10px] text-slate-400 font-medium">
                         {conv.lastMessage ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                       </span>
