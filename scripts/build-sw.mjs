@@ -1,6 +1,5 @@
 /**
- * Writes public/firebase-messaging-sw.js from Vite env vars so the SW matches the web app config.
- * Run automatically before dev/build via package.json scripts.
+ * Generates public/sw.js (PWA + Firebase Messaging). Run before vite dev/build.
  */
 import fs from 'fs';
 import path from 'path';
@@ -43,16 +42,18 @@ const cfg = {
   appId: env.VITE_FIREBASE_APP_ID || '',
 };
 
-const templatePath = path.join(__dirname, 'sw', 'firebase-messaging-sw.template.js');
-const template = fs.readFileSync(templatePath, 'utf8');
+const template = fs.readFileSync(
+  path.join(__dirname, 'sw', 'medcore-sw.template.js'),
+  'utf8'
+);
 const out = template
-  .replace(/__API_KEY__/g, cfg.apiKey)
-  .replace(/__AUTH_DOMAIN__/g, cfg.authDomain)
-  .replace(/__PROJECT_ID__/g, cfg.projectId)
-  .replace(/__STORAGE_BUCKET__/g, cfg.storageBucket)
-  .replace(/__MESSAGING_SENDER_ID__/g, cfg.messagingSenderId)
-  .replace(/__APP_ID__/g, cfg.appId);
+  .replace(/__FIREBASE_API_KEY__/g, cfg.apiKey)
+  .replace(/__FIREBASE_AUTH_DOMAIN__/g, cfg.authDomain)
+  .replace(/__FIREBASE_PROJECT_ID__/g, cfg.projectId)
+  .replace(/__FIREBASE_STORAGE_BUCKET__/g, cfg.storageBucket)
+  .replace(/__FIREBASE_MESSAGING_SENDER_ID__/g, cfg.messagingSenderId)
+  .replace(/__FIREBASE_APP_ID__/g, cfg.appId);
 
-const dest = path.join(root, 'public', 'firebase-messaging-sw.js');
+const dest = path.join(root, 'public', 'sw.js');
 fs.writeFileSync(dest, out, 'utf8');
-console.log('[sync-firebase-sw] wrote', dest);
+console.log('[build-sw] wrote', dest);

@@ -54,7 +54,7 @@ const PatientProfile = () => {
         try {
             const res = await getOrCreateConversation(id);
             const conversation = res.data.conversation;
-            navigate('/doctor/messages', { state: { selectedConversationId: conversation._id } });
+            navigate(`/chat/${conversation._id}`);
         } catch (err) {
             console.error('Failed to start chat', err);
         }

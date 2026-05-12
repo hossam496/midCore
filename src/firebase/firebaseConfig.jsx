@@ -68,7 +68,7 @@ export async function registerDeviceForFcm(apiClient) {
     return null;
   }
 
-  const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+  const registration = await navigator.serviceWorker.register('/sw.js', {
     scope: '/',
   });
   await navigator.serviceWorker.ready;

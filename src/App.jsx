@@ -11,6 +11,7 @@ import AppointmentPage from './pages/AppointmentPage';
 import PatientDetailsPage from './pages/PatientDetailsPage';
 import BookingConfirmationPage from './pages/BookingConfirmationPage';
 import PatientMessagesPage from './pages/PatientMessagesPage';
+import ChatConversationPage from './pages/ChatConversationPage';
 import { AuthProvider } from './context/AuthContext';
 import { BookingProvider } from './context/BookingContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -113,6 +114,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <PatientMessagesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="chat/:conversationId"
+                      element={
+                        <ProtectedRoute>
+                          <ChatConversationPage />
                         </ProtectedRoute>
                       }
                     />

@@ -26,6 +26,7 @@ const DoctorRoutes = () => {
         <Route path="patients/:id" element={<PatientProfile />} />
         <Route path="schedule" element={<Schedule />} />
         <Route path="messages" element={<Messages />} />
+        <Route path="chat/:conversationId" element={<Messages />} />
         <Route path="profile" element={<Profile />} />
       </Routes>
     </Layout>

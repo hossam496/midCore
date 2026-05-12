@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import {
   Search,
   MoreVertical,
@@ -33,6 +33,7 @@ const Messages = () => {
   const { user } = useAuth();
   const { channel, emitTyping, typingStatus } = useSocket();
   const location = useLocation();
+  const routeParams = useParams();
   const [searchParams] = useSearchParams();
 
   const [conversations, setConversations] = useState([]);
@@ -64,8 +65,10 @@ const Messages = () => {
       setConversations(res.data.conversations || []);
 
       const queryConvId = searchParams.get('c');
+      const pathConvId = routeParams.conversationId;
       const stateConvId =
         location.state?.selectedConversationId ||
+        pathConvId ||
         queryConvId ||
         sessionStorage.getItem('medcore_selected_chat');
       if (stateConvId) {
@@ -82,7 +85,7 @@ const Messages = () => {
     } finally {
       setLoading(false);
     }
-  }, [location.state, location.search, searchParams]);
+  }, [location.state, location.search, searchParams, routeParams.conversationId]);
 
   useEffect(() => {
     fetchConvs();
@@ -175,14 +178,14 @@ const Messages = () => {
       }));
     };
 
-    channel.bind('newMessage', handleNewMessage);
-    channel.bind('messagesSeen', handleMessagesSeen);
+    channel.bind('new-message', handleNewMessage);
+    channel.bind('message-seen', handleMessagesSeen);
 
     return () => {
       try {
         if (channel) {
-          channel.unbind('newMessage', handleNewMessage);
-          channel.unbind('messagesSeen', handleMessagesSeen);
+          channel.unbind('new-message', handleNewMessage);
+          channel.unbind('message-seen', handleMessagesSeen);
         }
       } catch (error) {
         // Silent catch

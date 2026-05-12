@@ -30,10 +30,6 @@ export default defineConfig({
         target: 'http://localhost:5001',
         changeOrigin: true,
       },
-      '/chat': {
-        target: 'http://localhost:5001',
-        changeOrigin: true,
-      },
     },
     hmr: true,
   },

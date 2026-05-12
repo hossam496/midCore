@@ -51,7 +51,7 @@ const DoctorProfile = () => {
       setChatLoading(true);
       const res = await getOrCreateConversation(doctor.user._id);
       const conversation = res.data.conversation;
-      navigate('/messages', { state: { selectedConversationId: conversation._id } });
+      navigate(`/chat/${conversation._id}`);
     } catch (err) {
       console.error('Failed to start chat', err);
     } finally {
