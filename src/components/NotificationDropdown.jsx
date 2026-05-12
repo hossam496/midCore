@@ -140,8 +140,9 @@ const NotificationDropdown = () => {
               </button>
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </>
+      )}
+    </AnimatePresence>
     </div>
   );
 };
