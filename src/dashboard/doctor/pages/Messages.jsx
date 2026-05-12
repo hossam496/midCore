@@ -14,6 +14,7 @@ import {
   Check,
   CheckCheck,
   Mic,
+  Camera,
   ArrowRight,
   Image as ImageIcon,
   Loader2,
@@ -365,7 +366,14 @@ const Messages = () => {
                               {conv.lastMessage?.sender === user._id && (
                                 <CheckCheck size={14} className={conv.lastMessage?.seenBy?.length > 1 ? 'text-blue-400' : 'text-slate-300'} />
                               )}
-                              {conv.lastMessage?.text || 'ابدأ المحادثة الآن'}
+                               {conv.lastMessage?.messageType === 'image' ? (
+                                 <span className="flex items-center gap-1 italic">
+                                   <Camera size={12} className="text-blue-400" />
+                                   أرسل صورة
+                                 </span>
+                               ) : (
+                                 conv.lastMessage?.text || 'ابدأ المحادثة الآن'
+                               )}
                             </>
                           )}
                        </p>
