@@ -29,6 +29,11 @@ axiosInstance.interceptors.response.use(
     // Retry logic for Network Errors or 5xx errors
     if (!config || !config.retry) config.retry = 0;
     
+    // Heartbeat / telemetry: never auto-retry (avoids 4× traffic on flaky backend)
+    if (config.skipErrorRetry) {
+      return Promise.reject(error);
+    }
+
     if (config.retry < 3 && (!response || response.status >= 500)) {
       config.retry += 1;
       const delay = Math.pow(2, config.retry) * 1000; // Exponential backoff

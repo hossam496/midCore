@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import Pusher from 'pusher-js';
 import { useAuth } from './AuthContext';
@@ -20,16 +27,67 @@ export const SocketProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [typingStatus, setTypingStatus] = useState({}); // { conversationId: { isTyping: bool, senderName: string } }
 
-  // Presence heartbeat — backend skips redundant chat FCM while tab is active
+  const presenceFailRef = useRef(0);
+
+  // Presence heartbeat — backend skips redundant chat FCM while tab is active.
+  // Set VITE_ENABLE_PRESENCE_HEARTBEAT=false to disable entirely.
   useEffect(() => {
     if (!user) return undefined;
+    if (import.meta.env.VITE_ENABLE_PRESENCE_HEARTBEAT === 'false') {
+      return undefined;
+    }
 
-    const ping = () => {
-      api.post('/users/presence').catch(() => {});
+    presenceFailRef.current = 0;
+
+    let cancelled = false;
+    let timeoutId;
+    let controller;
+
+    const nextDelayMs = () => {
+      const fails = presenceFailRef.current;
+      if (fails <= 0) return 30000;
+      return Math.min(300000, 30000 * 2 ** Math.min(fails - 1, 4));
     };
-    ping();
-    const id = setInterval(ping, 30000);
-    return () => clearInterval(id);
+
+    const tick = async () => {
+      if (cancelled) return;
+      controller?.abort();
+      controller = new AbortController();
+
+      try {
+        await api.post(
+          '/users/presence',
+          {},
+          {
+            signal: controller.signal,
+            skipErrorRetry: true,
+            timeout: 12000,
+          }
+        );
+        presenceFailRef.current = 0;
+      } catch (err) {
+        if (cancelled || err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError') return;
+        presenceFailRef.current += 1;
+        if (import.meta.env.DEV) {
+          console.warn(
+            '[presence] ping failed',
+            err.response?.status ?? err.message,
+            `(next in ${nextDelayMs() / 1000}s)`
+          );
+        }
+      }
+
+      if (cancelled) return;
+      timeoutId = setTimeout(tick, nextDelayMs());
+    };
+
+    tick();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+      controller?.abort();
+    };
   }, [user]);
 
   useEffect(() => {
