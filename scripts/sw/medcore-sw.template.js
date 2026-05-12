@@ -3,46 +3,50 @@
 importScripts('https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.11.0/firebase-messaging-compat.js');
 
-firebase.initializeApp({
+const firebaseConfig = {
   apiKey: '__FIREBASE_API_KEY__',
   authDomain: '__FIREBASE_AUTH_DOMAIN__',
   projectId: '__FIREBASE_PROJECT_ID__',
   storageBucket: '__FIREBASE_STORAGE_BUCKET__',
   messagingSenderId: '__FIREBASE_MESSAGING_SENDER_ID__',
   appId: '__FIREBASE_APP_ID__',
-});
+};
 
-const messaging = firebase.messaging();
+if (firebaseConfig.projectId) {
+  firebase.initializeApp(firebaseConfig);
 
-messaging.onBackgroundMessage((payload) => {
-  const title =
-    payload.notification?.title || payload.data?.title || 'MedCore';
-  const body =
-    payload.notification?.body || payload.data?.body || 'لديك إشعار جديد';
-  const openUrl =
-    payload.data?.openUrl ||
-    payload.data?.redirectUrl ||
-    payload.data?.link ||
-    payload.data?.click_action ||
-    '/';
-  const icon = payload.data?.icon || '/icons/icon-192x192.png';
-  const badge = payload.data?.badge || '/icons/badge-72x72.png';
-  const tag =
-    payload.data?.tag ||
-    (payload.data?.conversationId
-      ? `chat-${payload.data.conversationId}`
-      : 'medcore');
+  const messaging = firebase.messaging();
 
-  return self.registration.showNotification(title, {
-    body,
-    icon,
-    badge,
-    tag: String(tag),
-    renotify: true,
-    vibrate: [180, 100, 180],
-    data: { openUrl: String(openUrl) },
+  messaging.onBackgroundMessage((payload) => {
+    const title =
+      payload.notification?.title || payload.data?.title || 'MedCore';
+    const body =
+      payload.notification?.body || payload.data?.body || 'لديك إشعار جديد';
+    const openUrl =
+      payload.data?.openUrl ||
+      payload.data?.redirectUrl ||
+      payload.data?.link ||
+      payload.data?.click_action ||
+      '/';
+    const icon = payload.data?.icon || '/icons/icon-192x192.png';
+    const badge = payload.data?.badge || '/icons/badge-72x72.png';
+    const tag =
+      payload.data?.tag ||
+      (payload.data?.conversationId
+        ? `chat-${payload.data.conversationId}`
+        : 'medcore');
+
+    return self.registration.showNotification(title, {
+      body,
+      icon,
+      badge,
+      tag: String(tag),
+      renotify: true,
+      vibrate: [180, 100, 180],
+      data: { openUrl: String(openUrl) },
+    });
   });
-});
+}
 
 const CACHE_NAME = 'medcore-v3';
 const OFFLINE_URL = '/';

@@ -57,3 +57,8 @@ const out = template
 const dest = path.join(root, 'public', 'sw.js');
 fs.writeFileSync(dest, out, 'utf8');
 console.log('[build-sw] wrote', dest);
+if (!cfg.projectId) {
+  console.warn(
+    '[build-sw] FCM disabled in sw.js: set VITE_FIREBASE_PROJECT_ID (and other VITE_FIREBASE_*) in .env'
+  );
+}
