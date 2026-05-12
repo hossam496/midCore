@@ -20,8 +20,12 @@ export const AuthProvider = ({ children }) => {
         const res = await getMe();
         setUser(res.data.user);
         setIsAuthenticated(true);
-      } catch {
+      } catch (error) {
         // Cookie invalid or missing — user is logged out
+        // Suppress 401 errors in console as they're expected when not logged in
+        if (error.response?.status !== 401) {
+          console.error('Session verification failed:', error.message);
+        }
         setUser(null);
         setIsAuthenticated(false);
       } finally {
