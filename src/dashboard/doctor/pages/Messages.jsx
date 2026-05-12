@@ -158,8 +158,12 @@ const Messages = () => {
     channel.bind('messagesSeen', handleMessagesSeen);
 
     return () => {
-      channel.unbind('newMessage', handleNewMessage);
-      channel.unbind('messagesSeen', handleMessagesSeen);
+      try {
+        channel.unbind('newMessage', handleNewMessage);
+        channel.unbind('messagesSeen', handleMessagesSeen);
+      } catch (error) {
+        // Safe to ignore if connection is already closed
+      }
     };
   }, [channel, selectedConv, user._id]);
 

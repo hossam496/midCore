@@ -88,10 +88,16 @@ export const SocketProvider = ({ children }) => {
       });
 
       return () => {
-        if (pusherInstance) {
-          userChannel.unbind_all();
-          pusherInstance.unsubscribe(`user-${user._id}`);
-          pusherInstance.disconnect();
+        try {
+          if (userChannel) {
+            userChannel.unbind_all();
+          }
+          if (pusherInstance) {
+            pusherInstance.unsubscribe(`user-${user._id}`);
+            pusherInstance.disconnect();
+          }
+        } catch (error) {
+          console.warn('Pusher cleanup warning:', error);
         }
       };
     }
