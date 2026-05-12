@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, LogOut, User as UserIcon, ChevronRight } from 'lucide-react';
+import { Menu, X, LogOut, User as UserIcon, ChevronRight, MessageSquare } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import Button from './Button';
 import NotificationDropdown from './NotificationDropdown';
 
@@ -12,6 +13,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, logout, user } = useAuth();
+  const { unreadCount } = useSocket();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,7 +36,11 @@ const Navbar = () => {
       user?.role === 'admin' ? { name: 'لوحة الإدارة', href: '/admin/dashboard' } :
         user?.role === 'doctor' ? { name: 'لوحة التحكم', href: '/doctor/dashboard' } :
           { name: 'حجوزاتي', href: '/patient-details' },
-      { name: 'الرسائل', href: user?.role === 'doctor' ? '/doctor/messages' : '/messages' }
+      { 
+        name: 'الرسائل', 
+        href: user?.role === 'doctor' ? '/doctor/messages' : '/messages',
+        badge: unreadCount
+      }
     ] : []),
   ];
 
@@ -69,10 +75,15 @@ const Navbar = () => {
             <Link
               key={link.name}
               to={link.href}
-              className={`relative font-bold text-sm transition-colors group ${location.pathname === link.href ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'
+              className={`relative font-bold text-sm transition-colors group flex items-center gap-1.5 ${location.pathname === link.href ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'
                 }`}
             >
               {link.name}
+              {link.badge > 0 && (
+                <span className="bg-red-500 text-white text-[10px] h-4 min-w-[1rem] px-1 rounded-full flex items-center justify-center animate-bounce">
+                  {link.badge}
+                </span>
+              )}
               <span className={`absolute -bottom-1 right-0 h-0.5 bg-blue-600 transition-all duration-300 ${location.pathname === link.href ? 'w-full' : 'w-0 group-hover:w-full'
                 }`} />
             </Link>
@@ -143,7 +154,14 @@ const Navbar = () => {
                 to={link.href}
                 className="text-lg font-bold text-gray-800 flex justify-between items-center group"
               >
-                {link.name}
+                <span className="flex items-center gap-2">
+                  {link.name}
+                  {link.badge > 0 && (
+                    <span className="bg-red-500 text-white text-[10px] h-5 w-5 rounded-full flex items-center justify-center">
+                      {link.badge}
+                    </span>
+                  )}
+                </span>
                 <ChevronRight size={20} className="text-gray-300 group-hover:text-blue-600 transition-colors" />
               </Link>
             ))}
@@ -175,3 +193,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
