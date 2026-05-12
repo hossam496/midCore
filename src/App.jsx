@@ -41,11 +41,11 @@ if (typeof window !== 'undefined') {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <SocketProvider>
-          <BookingProvider>
-            <Router>
+    <Router>
+      <AuthProvider>
+        <NotificationProvider>
+          <SocketProvider>
+            <BookingProvider>
               <Toaster position="top-right" reverseOrder={false} />
               <React.Suspense fallback={<LoadingScreen />}>
                 <Routes>
@@ -120,11 +120,11 @@ const App = () => {
                   </Route>
                 </Routes>
               </React.Suspense>
-            </Router>
-          </BookingProvider>
-        </SocketProvider>
-      </NotificationProvider>
-    </AuthProvider>
+            </BookingProvider>
+          </SocketProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </Router>
   );
 };
 
