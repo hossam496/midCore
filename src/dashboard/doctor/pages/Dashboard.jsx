@@ -4,6 +4,7 @@ import AppointmentTimeline from '../components/AppointmentTimeline';
 import RecentPatients from '../components/RecentPatients';
 import { Users, FileText, Activity } from 'lucide-react';
 import { getDoctorStats } from '../../../api/statsApi';
+import { getAppointments } from '../../../api/appointmentApi';
 import { useAuth } from '../../../context/AuthContext';
 
 const Dashboard = () => {
