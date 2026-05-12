@@ -30,7 +30,7 @@ import toast from 'react-hot-toast';
 
 const Messages = () => {
   const { user } = useAuth();
-  const { socket, isOnline, emitTyping, emitStopTyping } = useSocket();
+  const { channel, isOnline, emitTyping, typingStatus } = useSocket();
   const location = useLocation();
 
   const [conversations, setConversations] = useState([]);
@@ -44,7 +44,6 @@ const Messages = () => {
   const [activeView, setActiveView] = useState('list'); // 'list', 'chat'
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [typingUsers, setTypingUsers] = useState({}); // { conversationId: senderName }
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -92,54 +91,36 @@ const Messages = () => {
       setMessages(res.data.messages || []);
       setTimeout(() => scrollToBottom('auto'), 100);
       setError(null);
-
-      // Notify others that messages are seen
-      if (socket) {
-        const conv = conversations.find(c => c._id === convId);
-        const other = getOtherParticipant(conv);
-        if (other) {
-          socket.emit('messageSeen', { conversationId: convId, senderId: other._id, receiverId: user._id });
-        }
-      }
     } catch (err) {
       console.error('Failed to fetch messages', err);
       setError('فشل في تحميل الرسائل.');
     } finally {
       setMessagesLoading(false);
     }
-  }, [conversations, socket, user._id]);
+  }, []);
 
   useEffect(() => {
     if (selectedConv?._id) {
       sessionStorage.setItem('medcore_selected_chat', selectedConv._id);
       fetchMessages(selectedConv._id);
     }
-  }, [selectedConv?._id]);
+  }, [selectedConv?._id, fetchMessages]);
 
-  // ── Socket Event Listeners ──────────────────────────────────────────────────
+  // ── Pusher Event Listeners ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!socket) return;
+    if (!channel) return;
 
     const handleNewMessage = (msg) => {
       // If message belongs to current chat, add it
       if (selectedConv && msg.conversation === selectedConv._id) {
         setMessages(prev => {
-          // Prevent duplicates if API also added it
           if (prev.find(m => m._id === msg._id)) return prev;
           return [...prev, msg];
         });
         setTimeout(() => scrollToBottom('smooth'), 50);
-        
-        // Mark as seen immediately
-        const other = getOtherParticipant(selectedConv);
-        socket.emit('messageSeen', { 
-          conversationId: selectedConv._id, 
-          senderId: other._id, 
-          receiverId: user._id 
-        });
       }
 
-      // Update conversations list (last message and unread count)
+      // Update conversations list
       setConversations(prev => prev.map(c => {
         if (c._id === msg.conversation) {
           const isSelected = selectedConv && selectedConv._id === c._id;
@@ -153,18 +134,6 @@ const Messages = () => {
         }
         return c;
       }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)));
-    };
-
-    const handleTyping = ({ conversationId, senderName }) => {
-      setTypingUsers(prev => ({ ...prev, [conversationId]: senderName }));
-    };
-
-    const handleStopTypingEvent = ({ conversationId }) => {
-      setTypingUsers(prev => {
-        const next = { ...prev };
-        delete next[conversationId];
-        return next;
-      });
     };
 
     const handleMessagesSeen = ({ conversationId, seenBy }) => {
@@ -185,18 +154,14 @@ const Messages = () => {
       }));
     };
 
-    socket.on('newMessage', handleNewMessage);
-    socket.on('displayTyping', handleTyping);
-    socket.on('hideTyping', handleStopTypingEvent);
-    socket.on('messagesSeen', handleMessagesSeen);
+    channel.bind('newMessage', handleNewMessage);
+    channel.bind('messagesSeen', handleMessagesSeen);
 
     return () => {
-      socket.off('newMessage', handleNewMessage);
-      socket.off('displayTyping', handleTyping);
-      socket.off('hideTyping', handleStopTypingEvent);
-      socket.off('messagesSeen', handleMessagesSeen);
+      channel.unbind('newMessage', handleNewMessage);
+      channel.unbind('messagesSeen', handleMessagesSeen);
     };
-  }, [socket, selectedConv, user._id]);
+  }, [channel, selectedConv, user._id]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleSendMessage = async (e) => {
@@ -229,11 +194,11 @@ const Messages = () => {
     if (selectedConv) {
       const other = getOtherParticipant(selectedConv);
       if (other) {
-        emitTyping(selectedConv._id, other._id);
+        emitTyping(selectedConv._id, other._id, true);
         
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
-          emitStopTyping(selectedConv._id, other._id);
+          emitTyping(selectedConv._id, other._id, false);
         }, 3000);
       }
     }
@@ -243,7 +208,7 @@ const Messages = () => {
     if (selectedConv) {
       const other = getOtherParticipant(selectedConv);
       if (other) {
-        emitStopTyping(selectedConv._id, other._id);
+        emitTyping(selectedConv._id, other._id, false);
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       }
     }
@@ -355,7 +320,7 @@ const Messages = () => {
               const isActive = selectedConv?._id === conv._id;
               const isUserOnlineNow = isOnline(other?._id);
               const unread = conv.unreadCount?.[user._id] || 0;
-              const isTyping = typingUsers[conv._id];
+              const isTyping = typingStatus[conv._id];
 
               return (
                 <motion.div
@@ -440,7 +405,7 @@ const Messages = () => {
                 <div className="min-w-0">
                   <h3 className="font-bold text-slate-800 text-sm lg:text-base truncate leading-none">{activeOther?.name}</h3>
                   <div className="flex items-center gap-1.5 mt-1">
-                    {typingUsers[selectedConv._id] ? (
+                    {typingStatus[selectedConv._id] ? (
                       <span className="text-[10px] text-green-500 font-bold animate-pulse">يكتب الآن...</span>
                     ) : (
                       <span className={`text-[10px] font-bold ${isOtherOnline ? 'text-green-500' : 'text-slate-400'}`}>

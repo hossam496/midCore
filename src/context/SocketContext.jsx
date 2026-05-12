@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { io } from 'socket.io-client';
+import Pusher from 'pusher-js';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
+import api from '../api/axiosInstance';
 import toast from 'react-hot-toast';
 
 const SocketContext = createContext();
@@ -11,49 +12,43 @@ export const useSocket = () => useContext(SocketContext);
 export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
   const { addNotification } = useNotifications();
-  const [socket, setSocket] = useState(null);
-  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [pusher, setPusher] = useState(null);
+  const [channel, setChannel] = useState(null);
+  const [onlineUsers, setOnlineUsers] = useState([]); // Note: Presence channels are needed for true online status
   const [unreadCount, setUnreadCount] = useState(0);
+  const [typingStatus, setTypingStatus] = useState({}); // { conversationId: { isTyping: bool, senderName: string } }
 
   useEffect(() => {
     if (user) {
-      // Connect to socket server
-      const socketUrl = import.meta.env.VITE_API_URL.replace('/api', '');
-      const newSocket = io(socketUrl, {
-        withCredentials: true,
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
+      // Initialize Pusher
+      const pusherInstance = new Pusher(import.meta.env.VITE_PUSHER_KEY, {
+        cluster: import.meta.env.VITE_PUSHER_CLUSTER,
+        forceTLS: true
       });
 
-      setSocket(newSocket);
+      setPusher(pusherInstance);
 
-      // Join personal room
-      newSocket.emit('join', user._id);
+      // Subscribe to personal channel
+      const userChannel = pusherInstance.subscribe(`user-${user._id}`);
+      setChannel(userChannel);
 
-      // Listen for online users
-      newSocket.on('getOnlineUsers', (users) => {
-        setOnlineUsers(users);
+      // Listen for events
+      userChannel.bind('newMessage', (msg) => {
+        // Handled by Messages.jsx listening to this context or direct binding
+        // We'll use a custom event emitter pattern or just rely on global listeners
       });
 
-      // Listen for unread count updates
-      newSocket.on('unreadCountUpdate', ({ unreadCount: count }) => {
+      userChannel.bind('unreadCountUpdate', ({ unreadCount: count }) => {
         setUnreadCount(count);
       });
 
-      // Global Notification Listener
-      newSocket.on('newNotification', (notification) => {
-        // Play sound
+      userChannel.bind('newNotification', (notification) => {
         playNotificationSound();
-        
-        // Add to NotificationContext state
         addNotification(notification);
 
-        // Show Toast
         toast.custom((t) => (
           <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-2xl pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden border border-slate-100`}>
-            <div className="flex-1 w-0 p-4">
+             <div className="flex-1 w-0 p-4">
               <div className="flex items-start">
                 <div className="flex-shrink-0 pt-0.5">
                   <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
@@ -77,12 +72,25 @@ export const SocketProvider = ({ children }) => {
               </button>
             </div>
           </div>
-        ), { duration: 5000, position: 'top-right' });
+        ));
+      });
+
+      userChannel.bind('displayTyping', ({ conversationId, senderName }) => {
+        setTypingStatus(prev => ({ ...prev, [conversationId]: { isTyping: true, senderName } }));
+      });
+
+      userChannel.bind('hideTyping', ({ conversationId }) => {
+        setTypingStatus(prev => {
+          const next = { ...prev };
+          delete next[conversationId];
+          return next;
+        });
       });
 
       return () => {
-        newSocket.close();
-        setSocket(null);
+        userChannel.unbind_all();
+        pusherInstance.unsubscribe(`user-${user._id}`);
+        pusherInstance.disconnect();
       };
     }
   }, [user, addNotification]);
@@ -91,37 +99,30 @@ export const SocketProvider = ({ children }) => {
     try {
       const audio = new Audio('/notification.mp3');
       audio.play();
-    } catch (error) {
-      console.log('Error playing sound:', error);
-    }
+    } catch (error) {}
   };
 
-  const emitTyping = useCallback((conversationId, receiverId) => {
-    if (socket && user) {
-      socket.emit('typing', { conversationId, receiverId, senderName: user.name });
+  const emitTyping = useCallback(async (conversationId, receiverId, isTyping) => {
+    try {
+      await api.post('/conversations/typing', { conversationId, receiverId, isTyping });
+    } catch (error) {
+      console.error('Typing error:', error);
     }
-  }, [socket, user]);
+  }, []);
 
-  const emitStopTyping = useCallback((conversationId, receiverId) => {
-    if (socket) {
-      socket.emit('stopTyping', { conversationId, receiverId });
-    }
-  }, [socket]);
-
-  const isOnline = (userId) => onlineUsers.includes(userId?.toString());
+  // For simplicity without Presence Channels, we'll assume everyone is online or use a heartbeat
+  const isOnline = (userId) => true; 
 
   return (
     <SocketContext.Provider value={{ 
-      socket, 
-      onlineUsers, 
+      pusher,
+      channel,
       isOnline, 
       emitTyping, 
-      emitStopTyping,
-      unreadCount 
+      unreadCount,
+      typingStatus
     }}>
       {children}
     </SocketContext.Provider>
   );
 };
-
-
