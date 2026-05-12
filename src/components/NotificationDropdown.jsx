@@ -53,15 +53,25 @@ const NotificationDropdown = () => {
         )}
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown Menu / Mobile Modal */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="fixed inset-x-4 top-20 md:absolute md:inset-auto md:left-0 md:mt-2 md:w-80 bg-white rounded-2xl shadow-2xl ring-1 ring-black ring-opacity-5 z-50 overflow-hidden"
-          >
+          <>
+            {/* Backdrop for Mobile */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="fixed inset-x-6 top-1/2 -translate-y-1/2 md:translate-y-0 md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 w-auto md:w-80 bg-white rounded-3xl shadow-2xl ring-1 ring-black ring-opacity-5 z-50 overflow-hidden"
+            >
             {/* Header */}
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <h3 className="font-bold text-gray-900">التنبيهات</h3>
