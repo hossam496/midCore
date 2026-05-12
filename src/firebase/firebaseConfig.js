@@ -30,10 +30,17 @@ export const requestNotificationPermission = async () => {
       // Explicitly register the service worker to ensure it's active
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       
+      const vapidKey = 'YOUR_VAPID_KEY';
+
+      if (!vapidKey || vapidKey === 'YOUR_VAPID_KEY') {
+        console.warn('⚠️ Firebase VAPID Key is missing or invalid. Push notifications will not work until you add your real key from Firebase Console.');
+        return;
+      }
+
       // Get FCM Token
       const token = await getToken(messaging, {
         serviceWorkerRegistration: registration,
-        vapidKey: 'YOUR_VAPID_KEY' // REPLACE WITH YOUR ACTUAL VAPID KEY
+        vapidKey: vapidKey
       });
 
       if (token) {
