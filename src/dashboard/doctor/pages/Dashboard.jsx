@@ -60,16 +60,26 @@ const Dashboard = () => {
     },
   ];
 
-  if (loading) return <div className="p-8 text-center font-bold text-slate-500">Loading Dashboard...</div>;
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center px-4 py-16 text-center font-bold text-slate-500">
+        Loading Dashboard...
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-10 max-w-[1600px] mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Good morning, Dr. {user?.name ? user.name.split(' ')[0] : ''}</h1>
-        <p className="text-slate-500 mt-1 font-medium">Here is your daily overview. You have {statsData?.todayPatients || 0} appointments scheduled today.</p>
+    <div className="space-y-6 sm:space-y-8 lg:space-y-10 max-w-[1600px] mx-auto min-w-0">
+      <div className="min-w-0">
+        <h1 className="text-xl font-bold tracking-tight text-slate-800 sm:text-2xl lg:text-3xl">
+          Good morning, Dr. {user?.name ? user.name.split(' ')[0] : ''}
+        </h1>
+        <p className="mt-1 max-w-2xl text-sm font-medium text-slate-500 sm:text-base">
+          Here is your daily overview. You have {statsData?.todayPatients || 0} appointments scheduled today.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
         {stats.map((stat, i) => (
           <div key={i} className="stats-card-wrapper">
             <StatsCard {...stat} />
@@ -77,8 +87,8 @@ const Dashboard = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 content-section">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3 lg:gap-8">
+        <div className="min-w-0 lg:col-span-2 content-section">
           <AppointmentTimeline appointments={appointments} />
         </div>
         <div className="content-section">

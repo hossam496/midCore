@@ -4,8 +4,8 @@ import { TrendingUp, TrendingDown, Users, FileText, Activity } from 'lucide-reac
 const StatsCard = ({ title, value, icon: Icon, trend, trendValue, secondaryText, progress, variant }) => {
   if (variant === 'blue') {
     return (
-      <div className="bg-[#0047ff] p-6 rounded-2xl shadow-xl text-white relative overflow-hidden group">
-        <div className="flex justify-between items-start mb-6">
+      <div className="group relative overflow-hidden rounded-2xl bg-[#0047ff] p-4 text-white shadow-xl sm:p-6">
+        <div className="mb-6 flex items-start justify-between">
           <div>
             <p className="text-[10px] font-bold tracking-[0.1em] opacity-70 uppercase">{title}</p>
             <h3 className="text-3xl font-bold mt-1 tracking-tight">{value}</h3>
@@ -28,7 +28,7 @@ const StatsCard = ({ title, value, icon: Icon, trend, trendValue, secondaryText,
   }
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 stats-card group hover:shadow-md transition-all duration-300">
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 stats-card group hover:shadow-md transition-all duration-300">
       <div className="flex justify-between items-start mb-2">
         <div>
           <p className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase">{title}</p>

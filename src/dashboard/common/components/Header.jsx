@@ -1,47 +1,88 @@
-import React from 'react';
-import { Search, Globe, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Globe, User, Menu, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import getImageUrl from '../../../utils/imageUrl';
+import NotificationBell from './NotificationBell';
 
-const Header = () => {
+const Header = ({ onOpenMobileSidebar, desktopCollapsed, onToggleDesktopSidebar }) => {
   const { user } = useAuth();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <header className="h-20 bg-white border-b border-slate-100 sticky top-0 z-40 px-8 flex items-center justify-between">
-      {/* Search */}
-      <div className="flex items-center gap-4 flex-1 max-w-xl">
-        <div className="relative w-full">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-slate-100/80 bg-white/95 px-3 backdrop-blur-md sm:h-20 sm:gap-4 sm:px-4 lg:px-8">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+        <button
+          type="button"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-600 transition-colors hover:bg-slate-100 lg:hidden touch-manipulation"
+          onClick={onOpenMobileSidebar}
+          aria-label="فتح القائمة"
+        >
+          <Menu size={22} />
+        </button>
+
+        <button
+          type="button"
+          className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-blue-600 lg:flex touch-manipulation"
+          onClick={onToggleDesktopSidebar}
+          aria-label={desktopCollapsed ? 'توسيع الشريط الجانبي' : 'طي الشريط الجانبي'}
+        >
+          {desktopCollapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
+        </button>
+
+        <div
+          className={`relative min-w-0 flex-1 max-w-xl transition-all ${
+            searchOpen ? 'flex' : 'hidden sm:flex'
+          }`}
+        >
+          <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 sm:right-5 sm:h-[18px] sm:w-[18px]" />
           <input
-            type="text"
-            placeholder="Search patients, records, or appointments..."
-            className="w-full bg-[#f1f5f9] border-none rounded-xl py-3.5 pl-14 pr-4 text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none font-medium"
+            type="search"
+            placeholder="بحث عن مريض، سجل، موعد..."
+            className="w-full rounded-xl border-none bg-slate-100 py-2.5 pr-10 pl-3 text-sm font-medium text-slate-700 outline-none transition-all placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-500/20 sm:py-3.5 sm:pr-14 sm:pl-4"
+            aria-label="بحث"
           />
         </div>
+
+        <button
+          type="button"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 sm:hidden touch-manipulation"
+          onClick={() => setSearchOpen((v) => !v)}
+          aria-label={searchOpen ? 'إخفاء البحث' : 'إظهار البحث'}
+        >
+          <Search size={20} />
+        </button>
       </div>
 
-      {/* Right side */}
-      <div className="flex items-center gap-6">
-        <button className="p-2 text-slate-400 hover:text-blue-600 transition-all rounded-xl hover:bg-blue-50">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-4 lg:gap-6">
+        <button
+          type="button"
+          className="hidden rounded-xl p-2 text-slate-400 transition-all hover:bg-blue-50 hover:text-blue-600 sm:flex touch-manipulation"
+          aria-label="اللغة"
+        >
           <Globe size={20} />
         </button>
 
-        <div className="h-6 w-[1px] bg-slate-200" />
+        <div className="hidden h-6 w-px bg-slate-200 sm:block" />
 
-        {/* User info */}
-        <div className="flex items-center gap-4">
-          <div className="flex flex-col items-end -space-y-1">
-            <span className="text-xs font-bold text-slate-800">{user?.name || 'مستخدم'}</span>
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{user?.role || 'user'}</span>
+        <NotificationBell />
+
+        <div className="hidden h-6 w-px bg-slate-200 md:block" />
+
+        <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden min-w-0 flex-col items-end -space-y-0.5 lg:flex">
+            <span className="max-w-[10rem] truncate text-xs font-bold text-slate-800">{user?.name || 'مستخدم'}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-blue-600">
+              {user?.role || 'user'}
+            </span>
           </div>
           {user?.image ? (
             <img
               src={getImageUrl(user.image)}
-              alt="Profile"
-              className="w-11 h-11 rounded-2xl object-cover border border-slate-200"
+              alt=""
+              className="h-10 w-10 shrink-0 rounded-2xl border border-slate-200 object-cover sm:h-11 sm:w-11"
             />
           ) : (
-            <div className="w-11 h-11 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-100 text-slate-400 sm:h-11 sm:w-11">
               <User size={20} />
             </div>
           )}

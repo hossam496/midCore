@@ -87,25 +87,37 @@ const Patients = () => {
   ];
 
   if (loading) {
-    return <div className="p-8 text-center font-bold text-slate-500">Loading Patients...</div>;
+    return (
+      <div className="flex min-h-[30vh] items-center justify-center px-4 py-12 text-center font-bold text-slate-500">
+        Loading Patients...
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-6 sm:space-y-8">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 page-header">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Patients Directory</h1>
-          <p className="text-slate-500 mt-1 font-medium text-lg">Manage and monitor patient health records and histories.</p>
+      <div className="page-header flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">Patients Directory</h1>
+          <p className="mt-1 max-w-2xl text-sm font-medium text-slate-500 sm:text-lg">
+            Manage and monitor patient health records and histories.
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-xl transition-all duration-300 font-bold shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            className="flex min-h-11 touch-manipulation items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-600 shadow-sm transition-all duration-300 hover:bg-slate-50 sm:px-4"
+          >
             <Filter size={18} />
-            <span className="tracking-wide uppercase text-[10px]">Filter</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide">Filter</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 rounded-xl transition-all duration-300 font-bold shadow-sm">
+          <button
+            type="button"
+            className="flex min-h-11 touch-manipulation items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-600 shadow-sm transition-all duration-300 hover:bg-slate-50 sm:px-4"
+          >
             <Download size={18} />
-            <span className="tracking-wide uppercase text-[10px]">Export</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide">Export</span>
           </button>
         </div>
       </div>
@@ -134,11 +146,9 @@ const Patients = () => {
       </div>
 
       {/* Table Section */}
-      <div
-        className="patients-table bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm"
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+      <div className="patients-table overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+        <div className="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+          <table className="w-full min-w-[640px] border-collapse text-left">
             <thead>
               <tr className="border-b border-slate-50 bg-slate-50/50">
                 <th className="px-6 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Patient Name</th>

@@ -299,7 +299,7 @@ const Messages = () => {
   }
 
   return (
-    <div className="flex h-[calc(100vh-140px)] bg-white overflow-hidden rounded-3xl shadow-2xl border border-slate-100 lg:mx-4" dir="rtl">
+    <div className="flex min-h-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg sm:rounded-3xl sm:shadow-2xl lg:shadow-2xl h-[calc(100dvh-7.5rem)] min-h-[320px] sm:h-[calc(100dvh-8rem)] lg:h-[calc(100vh-7rem)]" dir="rtl">
       {/* ── Left Side: Conversation List ───────────────────────────────────── */}
       <div className={`w-full lg:w-[400px] border-l border-slate-100 flex flex-col bg-white ${activeView === 'chat' ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
@@ -556,7 +556,7 @@ const Messages = () => {
             </div>
 
             {/* Input Bar */}
-            <div className="p-4 bg-white border-t border-slate-100 shrink-0 z-10">
+            <div className="sticky bottom-0 z-20 shrink-0 border-t border-slate-100 bg-white/95 p-3 backdrop-blur-md supports-[padding:max(0px)]:pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-4">
               <div className="max-w-5xl mx-auto flex items-end gap-3 bg-slate-50 p-2 rounded-[2rem] border border-slate-200 focus-within:border-blue-400 focus-within:bg-white transition-all shadow-inner">
                 <div className="flex gap-1 shrink-0 pb-1">
                   <button 
