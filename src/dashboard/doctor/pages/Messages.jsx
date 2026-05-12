@@ -89,11 +89,13 @@ const Messages = () => {
     try {
       setMessagesLoading(true);
       const res = await getMessages(convId);
-      setMessages(res.data.messages || []);
+      const msgs = res.data.messages || [];
+      console.log(`✅ Received ${msgs.length} messages`);
+      setMessages(msgs);
       setTimeout(() => scrollToBottom('auto'), 100);
       setError(null);
     } catch (err) {
-      console.error('Failed to fetch messages', err);
+      console.error('❌ Failed to fetch messages:', err);
       setError('فشل في تحميل الرسائل.');
     } finally {
       setMessagesLoading(false);
@@ -102,6 +104,7 @@ const Messages = () => {
 
   useEffect(() => {
     if (selectedConv?._id) {
+      console.log('🔄 Fetching messages for:', selectedConv._id);
       sessionStorage.setItem('medcore_selected_chat', selectedConv._id);
       fetchMessages(selectedConv._id);
     }
