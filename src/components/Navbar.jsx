@@ -4,7 +4,7 @@ import { Menu, X, LogOut, User as UserIcon, ChevronRight } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Button from './Button';
-
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -83,8 +83,7 @@ const Navbar = () => {
         <div className="hidden xl:flex items-center gap-4">
           {isAuthenticated ? (
             <div className="flex items-center gap-4">
-
-
+              <NotificationBell />
               <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${user?.role === 'admin' ? 'bg-red-50 border-red-100 text-red-700' :
                 user?.role === 'doctor' ? 'bg-blue-50 border-blue-100 text-blue-700' :
                   'bg-slate-50 border-slate-100 text-slate-700'
@@ -117,9 +116,9 @@ const Navbar = () => {
           )}
         </div>
 
-
-        {/* Mobile Menu Button */}
-        <div className="xl:hidden">
+        {/* Mobile Menu Actions */}
+        <div className="xl:hidden flex items-center gap-4">
+          {isAuthenticated && <NotificationBell />}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="text-gray-700 hover:text-blue-600 transition-colors"

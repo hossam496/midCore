@@ -26,3 +26,5 @@ export const toggleBlockSlot = (data) =>
   api.post('/doctors/block-slot', data);
 export const getSpecialties = () =>
   api.get('/doctors/specialties');
+export const deleteDoctor = (id) =>
+  api.delete(`/doctors/${id}`);

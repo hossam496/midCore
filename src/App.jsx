@@ -14,6 +14,8 @@ import PatientMessagesPage from './pages/PatientMessagesPage';
 import { AuthProvider } from './context/AuthContext';
 import { BookingProvider } from './context/BookingContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { SocketProvider } from './context/SocketContext';
+import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import BookingErrorBoundary from './components/BookingErrorBoundary';
 
@@ -27,7 +29,7 @@ const LoadingScreen = () => (
   </div>
 );
 
-// Auto-recovery for dynamic import failures (common during new deployments on Vercel)
+// Auto-recovery for dynamic import failures
 if (typeof window !== 'undefined') {
   window.addEventListener('error', (e) => {
     if (e.message && e.message.includes('Failed to fetch dynamically imported module')) {
@@ -41,86 +43,86 @@ const App = () => {
   return (
     <AuthProvider>
       <NotificationProvider>
-        <BookingProvider>
-          <Router>
-          <React.Suspense fallback={<LoadingScreen />}>
-            <Routes>
-              {/* Role-Based Dashboard Routes - Checked first */}
-              <Route
-                path="/doctor/*"
-                element={
-                  <ProtectedRoute allowedRole="doctor">
-                    <DoctorRoutes />
-                  </ProtectedRoute>
-                }
-              />
+        <SocketProvider>
+          <BookingProvider>
+            <Router>
+              <Toaster position="top-right" reverseOrder={false} />
+              <React.Suspense fallback={<LoadingScreen />}>
+                <Routes>
+                  {/* Role-Based Dashboard Routes */}
+                  <Route
+                    path="/doctor/*"
+                    element={
+                      <ProtectedRoute allowedRole="doctor">
+                        <DoctorRoutes />
+                      </ProtectedRoute>
+                    }
+                  />
 
-              <Route
-                path="/admin/*"
-                element={
-                  <ProtectedRoute allowedRole="admin">
-                    <AdminRoutes />
-                  </ProtectedRoute>
-                }
-              />
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <ProtectedRoute allowedRole="admin">
+                        <AdminRoutes />
+                      </ProtectedRoute>
+                    }
+                  />
 
-              {/* Public App Routes */}
-              <Route path="/" element={<MainLayout />}>
-                <Route index element={<HomePage />} />
-                <Route
-                  path="specialists"
-                  element={
-                    <ProtectedRoute>
-                      <FindSpecialist />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="specialists/:id" element={<DoctorProfile />} />
-                <Route
-                  path="schedule/:doctorId"
-                  element={
-                    <ProtectedRoute>
-                      <AppointmentPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="patient-details"
-                  element={
-                    <ProtectedRoute>
-                      <PatientDetailsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="booking-confirmation"
-                  element={
-                    <ProtectedRoute>
-                      {/* ✅ Error boundary catches ANY render crash in the
-                          confirmation step — including React #306, #130, and
-                          third-party library failures (QRCode, html2canvas, confetti) */}
-                      <BookingErrorBoundary>
-                        <BookingConfirmationPage />
-                      </BookingErrorBoundary>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="messages"
-                  element={
-                    <ProtectedRoute>
-                      <PatientMessagesPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="contact" element={<ContactPage />} />
-                <Route path="register" element={<RegisterPage />} />
-                <Route path="login" element={<LoginPage />} />
-              </Route>
-            </Routes>
-          </React.Suspense>
-        </Router>
-        </BookingProvider>
+                  {/* Public App Routes */}
+                  <Route path="/" element={<MainLayout />}>
+                    <Route index element={<HomePage />} />
+                    <Route
+                      path="specialists"
+                      element={
+                        <ProtectedRoute>
+                          <FindSpecialist />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="specialists/:id" element={<DoctorProfile />} />
+                    <Route
+                      path="schedule/:doctorId"
+                      element={
+                        <ProtectedRoute>
+                          <AppointmentPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="patient-details"
+                      element={
+                        <ProtectedRoute>
+                          <PatientDetailsPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="booking-confirmation"
+                      element={
+                        <ProtectedRoute>
+                          <BookingErrorBoundary>
+                            <BookingConfirmationPage />
+                          </BookingErrorBoundary>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="messages"
+                      element={
+                        <ProtectedRoute>
+                          <PatientMessagesPage />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="contact" element={<ContactPage />} />
+                    <Route path="register" element={<RegisterPage />} />
+                    <Route path="login" element={<LoginPage />} />
+                  </Route>
+                </Routes>
+              </React.Suspense>
+            </Router>
+          </BookingProvider>
+        </SocketProvider>
       </NotificationProvider>
     </AuthProvider>
   );

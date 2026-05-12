@@ -1,78 +1,76 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api/axiosInstance';
 import { useAuth } from './AuthContext';
+import { requestNotificationPermission } from '../firebase/firebaseConfig';
+import toast from 'react-hot-toast';
 
 const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadNotifCount, setUnreadNotifCount] = useState(0);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [pushStatus] = useState('unsupported');
-  const { isAuthenticated } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { isAuthenticated, user } = useAuth();
 
   // Fetch notifications via REST
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const res = await api.get('/users/notifications');
+      setLoading(true);
+      const res = await api.get('/notifications');
       if (res.data.success) {
         setNotifications(res.data.notifications || []);
         setUnreadNotifCount(res.data.unreadCount || 0);
       }
     } catch (err) {
-      // Silently fail — don't crash the app if notifications are unavailable
-      if (import.meta.env.DEV) {
-        console.warn('Notifications fetch failed:', err?.response?.data?.message || err.message);
-      }
+      console.error('Notifications fetch failed:', err);
+    } finally {
+      setLoading(false);
     }
   }, [isAuthenticated]);
 
+  // Request FCM Permission and Token
   useEffect(() => {
     if (isAuthenticated) {
       fetchNotifications();
-      // Poll every 60 seconds (Vercel serverless — avoid too-frequent cold starts)
-      const interval = setInterval(fetchNotifications, 60000);
-      return () => clearInterval(interval);
+      
+      // Delay FCM request slightly for better UX
+      const timer = setTimeout(() => {
+        requestNotificationPermission();
+      }, 3000);
+
+      return () => clearTimeout(timer);
     } else {
       setNotifications([]);
       setUnreadNotifCount(0);
     }
   }, [isAuthenticated, fetchNotifications]);
 
-  const toggleDropdown = () => setIsDropdownOpen(prev => !prev);
-  const closeDropdown = () => setIsDropdownOpen(false);
-
   const markRead = async (id) => {
     try {
-      await api.patch(`/users/notifications/${id}/read`);
+      await api.patch(`/notifications/${id}/read`);
       setNotifications(prev =>
-        prev.map(n => n._id === id ? { ...n, read: true } : n)
+        prev.map(n => n._id === id ? { ...n, isRead: true } : n)
       );
       setUnreadNotifCount(prev => Math.max(0, prev - 1));
     } catch (err) {
-      if (import.meta.env.DEV) console.warn('markRead failed:', err.message);
+      console.error('markRead failed:', err.message);
     }
   };
 
   const markAllRead = async () => {
     try {
-      await api.patch('/users/notifications/read-all');
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      await api.patch('/notifications/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadNotifCount(0);
     } catch (err) {
-      if (import.meta.env.DEV) console.warn('markAllRead failed:', err.message);
+      console.error('markAllRead failed:', err.message);
     }
   };
 
-  const clearAll = async () => {
-    try {
-      await api.delete('/users/notifications');
-      setNotifications([]);
-      setUnreadNotifCount(0);
-    } catch (err) {
-      if (import.meta.env.DEV) console.warn('clearAll failed:', err.message);
-    }
+  const addNotification = (notif) => {
+    setNotifications(prev => [notif, ...prev]);
+    setUnreadNotifCount(prev => prev + 1);
   };
 
   return (
@@ -80,13 +78,10 @@ export const NotificationProvider = ({ children }) => {
       value={{
         notifications,
         unreadNotifCount,
-        isDropdownOpen,
-        pushStatus,
-        toggleDropdown,
-        closeDropdown,
+        loading,
         markRead,
         markAllRead,
-        clearAll,
+        addNotification,
         refreshNotifications: fetchNotifications,
       }}
     >

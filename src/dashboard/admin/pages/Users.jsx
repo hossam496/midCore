@@ -14,10 +14,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Printer,
-  Users
+  Users,
+  Trash2
 } from 'lucide-react';
 
 import RegisterStaffModal from '../components/RegisterStaffModal';
+import { deleteDoctor } from '../../../api/doctorApi';
 
 const UsersList = () => {
   const [staffData, setStaffData] = useState([]);
@@ -63,6 +65,18 @@ const UsersList = () => {
     });
     setFilteredStaff(filtered);
   }, [searchQuery, specialtyFilter, staffData]);
+
+  const handleDelete = async (id, name) => {
+    if (window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+      try {
+        await deleteDoctor(id);
+        fetchData(); // Refresh list
+      } catch (err) {
+        alert('Failed to delete staff member');
+        console.error(err);
+      }
+    }
+  };
 
   const uniqueSpecialties = ['All', ...new Set(staffData.map(s => s.specialty))];
 
@@ -184,9 +198,18 @@ const UsersList = () => {
                     </span>
                   </td>
                   <td className="px-8 py-5 text-right">
-                    <button className="text-slate-300 hover:text-blue-600 transition-colors">
-                      <MoreHorizontal size={20} />
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => handleDelete(s._id, s.user?.name)}
+                        className="p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        title="Delete Staff"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                      <button className="p-2 text-slate-300 hover:text-blue-600 transition-colors">
+                        <MoreHorizontal size={20} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
