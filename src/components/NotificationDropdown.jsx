@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Check, Trash2, MessageSquare, Calendar, BellRing, User } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
+import { usePushMessaging } from '../context/PushMessagingContext';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { notifications, unreadNotifCount, markRead, markAllRead } = useNotifications();
+  const push = usePushMessaging();
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
@@ -75,14 +77,28 @@ const NotificationDropdown = () => {
             {/* Header */}
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <h3 className="font-bold text-gray-900">التنبيهات</h3>
-              {unreadNotifCount > 0 && (
-                <button
-                  onClick={markAllRead}
-                  className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
-                >
-                  <Check className="w-3 h-3" /> تحديد الكل كمقروء
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {push?.configured && push.permission !== 'granted' && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      push.requestPushPermission();
+                    }}
+                    className="text-[10px] font-bold text-white bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded-lg"
+                  >
+                    تفعيل الدفع
+                  </button>
+                )}
+                {unreadNotifCount > 0 && (
+                  <button
+                    onClick={markAllRead}
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                  >
+                    <Check className="w-3 h-3" /> الكل مقروء
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* List */}

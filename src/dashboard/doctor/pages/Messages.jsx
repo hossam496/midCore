@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import {
   Search,
   MoreVertical,
@@ -31,8 +31,9 @@ import toast from 'react-hot-toast';
 
 const Messages = () => {
   const { user } = useAuth();
-  const { channel, isOnline, emitTyping, typingStatus } = useSocket();
+  const { channel, emitTyping, typingStatus } = useSocket();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   const [conversations, setConversations] = useState([]);
   const [selectedConv, setSelectedConv] = useState(null);
@@ -62,9 +63,13 @@ const Messages = () => {
       const res = await getConversations();
       setConversations(res.data.conversations || []);
 
-      const stateConvId = location.state?.selectedConversationId || sessionStorage.getItem('medcore_selected_chat');
+      const queryConvId = searchParams.get('c');
+      const stateConvId =
+        location.state?.selectedConversationId ||
+        queryConvId ||
+        sessionStorage.getItem('medcore_selected_chat');
       if (stateConvId) {
-        const found = res.data.conversations.find(c => c._id === stateConvId);
+        const found = res.data.conversations.find((c) => c._id === stateConvId);
         if (found) {
           setSelectedConv(found);
           setActiveView('chat');
@@ -77,7 +82,7 @@ const Messages = () => {
     } finally {
       setLoading(false);
     }
-  }, [location.state]);
+  }, [location.state, location.search, searchParams]);
 
   useEffect(() => {
     fetchConvs();
@@ -268,7 +273,7 @@ const Messages = () => {
   };
 
   const getOtherParticipant = (conv) => {
-    return conv?.participants?.find(p => p._id !== user?._id);
+    return conv?.participants?.find((p) => String(p._id) !== String(user?._id));
   };
 
   const filteredConversations = conversations.filter(conv => {
@@ -277,7 +282,7 @@ const Messages = () => {
   });
 
   const activeOther = selectedConv ? getOtherParticipant(selectedConv) : null;
-  const isOtherOnline = activeOther ? isOnline(activeOther._id) : false;
+  const isOtherOnline = !!activeOther?.isOnline;
 
   if (loading && conversations.length === 0) {
     return (
@@ -340,7 +345,7 @@ const Messages = () => {
             filteredConversations.map(conv => {
               const other = getOtherParticipant(conv);
               const isActive = selectedConv?._id === conv._id;
-              const isUserOnlineNow = isOnline(other?._id);
+              const isUserOnlineNow = !!other?.isOnline;
               const unread = conv.unreadCount?.[user._id] || 0;
               const isTyping = typingStatus[conv._id];
 

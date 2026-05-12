@@ -20,6 +20,18 @@ export const SocketProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [typingStatus, setTypingStatus] = useState({}); // { conversationId: { isTyping: bool, senderName: string } }
 
+  // Presence heartbeat — backend skips redundant chat FCM while tab is active
+  useEffect(() => {
+    if (!user) return undefined;
+
+    const ping = () => {
+      api.post('/users/presence').catch(() => {});
+    };
+    ping();
+    const id = setInterval(ping, 30000);
+    return () => clearInterval(id);
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       // Initialize Pusher
@@ -111,7 +123,7 @@ export const SocketProvider = ({ children }) => {
         }
       };
     }
-  }, [user, addNotification]);
+  }, [user, addNotification, navigate]);
 
   const playNotificationSound = () => {
     // Suppress sound error if file is missing
@@ -129,8 +141,8 @@ export const SocketProvider = ({ children }) => {
     }
   }, []);
 
-  // For simplicity without Presence Channels, we'll assume everyone is online or use a heartbeat
-  const isOnline = (userId) => true; 
+  /** @deprecated Use participant.isOnline from API (presence heartbeat) */
+  const isOnline = useCallback(() => false, []);
 
   return (
     <SocketContext.Provider value={{ 

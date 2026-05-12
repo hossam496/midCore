@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../api/axiosInstance';
 import { useAuth } from './AuthContext';
-import { requestNotificationPermission } from '../firebase/firebaseConfig';
 import toast from 'react-hot-toast';
 
 const NotificationContext = createContext();
@@ -33,13 +32,6 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (isAuthenticated) {
       fetchNotifications();
-      
-      // Delay FCM request slightly for better UX
-      const timer = setTimeout(() => {
-        requestNotificationPermission();
-      }, 3000);
-
-      return () => clearTimeout(timer);
     } else {
       setNotifications([]);
       setUnreadNotifCount(0);

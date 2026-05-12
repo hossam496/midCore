@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "sync-firebase-sw": "node scripts/sync-firebase-sw.mjs",
+    "dev": "node scripts/sync-firebase-sw.mjs && vite",
+    "build": "node scripts/sync-firebase-sw.mjs && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
