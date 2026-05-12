@@ -13,10 +13,14 @@ export const SocketProvider = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
 
   useEffect(() => {
-    if (user) {
+    // Disable Socket.IO on Vercel production as it's not supported by Serverless Functions
+    const isVercel = window.location.hostname.endsWith('.vercel.app');
+    
+    if (user && !isVercel) {
       // Connect to socket server
       const newSocket = io(import.meta.env.VITE_API_URL.replace('/api', ''), {
         withCredentials: true,
+        transports: ['websocket', 'polling'],
       });
 
       setSocket(newSocket);
