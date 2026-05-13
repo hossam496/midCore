@@ -8,7 +8,8 @@
  *  4. Sending subscription to backend
  *  5. Unsubscribing on logout
  */
-import { BASE_URL as API_BASE } from '../api/axiosInstance';
+import api from './axios';
+import { isFirebaseConfigured, registerDeviceForFcm } from '../firebase/firebaseConfig';
 /**
  * Convert a base64 VAPID public key to a Uint8Array
  * (required by pushManager.subscribe)
@@ -63,26 +64,22 @@ export async function subscribeToPush() {
       return false;
     }
 
-    // 1. Get the active service worker registration
     const registration = await navigator.serviceWorker.ready;
 
-    // 2. Fetch VAPID public key from backend
-    const resp = await fetch(`${API_BASE}/push/vapid-public-key`);
-    const { publicKey } = await resp.json();
+    const { data } = await api.get('/push/vapid-public-key');
+    if (!data?.publicKey) {
+      if (import.meta.env.DEV) {
+        console.info('[Push] VAPID not configured on server — skip Web Push subscription.');
+      }
+      return false;
+    }
 
-    // 3. Create push subscription
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
+      applicationServerKey: urlBase64ToUint8Array(data.publicKey),
     });
 
-    // 4. Send to backend
-    await fetch(`${API_BASE}/push/subscribe`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(subscription),
-    });
+    await api.post('/push/subscribe', subscription.toJSON());
 
     console.log('[MedCore] Push subscription saved to backend.');
     return true;
@@ -107,11 +104,8 @@ export async function unsubscribeFromPush() {
     if (!subscription) return true;
 
     // Tell backend to remove it
-    await fetch(`${API_BASE}/push/unsubscribe`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ endpoint: subscription.endpoint }),
+    await api.delete('/push/unsubscribe', {
+      data: { endpoint: subscription.endpoint },
     });
 
     // Unsubscribe locally
@@ -135,6 +129,16 @@ export async function initializePushNotifications() {
   const permission = await requestNotificationPermission();
   if (permission !== 'granted') return 'denied';
 
-  const success = await subscribeToPush();
-  return success ? 'subscribed' : 'error';
+  const webOk = await subscribeToPush();
+  let fcmOk = false;
+  if (isFirebaseConfigured()) {
+    try {
+      const token = await registerDeviceForFcm(api);
+      fcmOk = !!token;
+    } catch (e) {
+      console.warn('[FCM] register after web push', e?.message);
+    }
+  }
+
+  return webOk || fcmOk ? 'subscribed' : 'error';
 }

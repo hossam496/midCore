@@ -16,6 +16,12 @@ import {
   registerForegroundMessageHandler,
   isFirebaseConfigured,
 } from '../firebase/firebaseConfig';
+import {
+  subscribeToPush,
+  unsubscribeFromPush,
+  initializePushNotifications,
+  isPushSupported,
+} from '../utils/pushNotifications';
 
 const PushMessagingContext = createContext(null);
 
@@ -26,7 +32,7 @@ export const usePushMessaging = () => useContext(PushMessagingContext);
  * Realtime chat still uses Pusher (SocketContext); FCM covers tab closed / background.
  */
 export const PushMessagingProvider = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [pushState, setPushState] = useState({
     supported: false,
@@ -37,10 +43,6 @@ export const PushMessagingProvider = ({ children }) => {
   const tokenRef = useRef(null);
 
   const requestPushPermission = useCallback(async () => {
-    if (!isFirebaseConfigured()) {
-      toast.error('إشعارات الدفع غير مهيأة. أضف مفاتيح Firebase في البيئة.');
-      return false;
-    }
     if (!('Notification' in window)) return false;
 
     const permission = await Notification.requestPermission();
@@ -52,13 +54,25 @@ export const PushMessagingProvider = ({ children }) => {
     }
 
     try {
-      const token = await registerDeviceForFcm(api);
-      tokenRef.current = token;
-      setPushState((s) => ({ ...s, tokenRegistered: !!token }));
-      if (token) toast.success('تم تفعيل إشعارات الخلفية');
-      return !!token;
+      let token = null;
+      if (isFirebaseConfigured()) {
+        token = await registerDeviceForFcm(api);
+        tokenRef.current = token;
+      }
+      const webOk = await subscribeToPush();
+      setPushState((s) => ({ ...s, tokenRegistered: !!(token || webOk) }));
+      if (token || webOk) {
+        toast.success('تم تفعيل إشعارات الخلفية');
+        return true;
+      }
+      toast.error(
+        isFirebaseConfigured()
+          ? 'تعذر تفعيل الإشعارات'
+          : 'فعّل VAPID على السيرفر (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY) أو Firebase'
+      );
+      return false;
     } catch (e) {
-      console.error('[FCM] register failed', e);
+      console.error('[Push] register failed', e);
       toast.error('تعذر تفعيل الإشعارات');
       return false;
     }
@@ -148,6 +162,7 @@ export const PushMessagingProvider = ({ children }) => {
         const token = await registerDeviceForFcm(api);
         tokenRef.current = token;
         setPushState((s) => ({ ...s, tokenRegistered: !!token }));
+        await subscribeToPush();
       } catch (e) {
         console.warn('[FCM] silent register skipped', e?.message);
       }
@@ -156,11 +171,25 @@ export const PushMessagingProvider = ({ children }) => {
     return () => clearTimeout(timer);
   }, [isAuthenticated]);
 
+  /** Patients: prompt once for notification permission → Web Push + FCM */
+  useEffect(() => {
+    if (!isAuthenticated || !user) return undefined;
+    if (user.role !== 'user') return undefined;
+    if (!isPushSupported()) return undefined;
+    if (Notification.permission !== 'default') return undefined;
+
+    const timer = setTimeout(() => {
+      initializePushNotifications().catch(() => {});
+    }, 7000);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, user]);
+
   // Presence heartbeat lives in SocketContext (with Pusher) to avoid duplicate requests
 
   // Logout → clear FCM tokens on server for this session
   useEffect(() => {
     if (isAuthenticated) return;
+    unsubscribeFromPush().catch(() => {});
     if (tokenRef.current) {
       clearFcmTokenOnServer(api);
       tokenRef.current = null;

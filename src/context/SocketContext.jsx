@@ -6,7 +6,7 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Pusher from 'pusher-js';
 import { useAuth } from './AuthContext';
 import { useNotifications } from './NotificationContext';
@@ -20,6 +20,15 @@ export const useSocket = () => useContext(SocketContext);
 export const SocketProvider = ({ children }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const activeConversationRef = useRef(null);
+
+  useEffect(() => {
+    const path = location.pathname || '';
+    let m = path.match(/\/chat\/([a-f\d]{24})/i);
+    if (!m) m = path.match(/\/doctor\/chat\/([a-f\d]{24})/i);
+    activeConversationRef.current = m ? m[1] : null;
+  }, [location.pathname]);
   const { addNotification } = useNotifications();
   const [pusher, setPusher] = useState(null);
   const [channel, setChannel] = useState(null);
@@ -57,7 +66,7 @@ export const SocketProvider = ({ children }) => {
       try {
         await api.post(
           '/users/presence',
-          {},
+          { activeConversationId: activeConversationRef.current },
           {
             signal: controller.signal,
             skipErrorRetry: true,

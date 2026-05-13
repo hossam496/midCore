@@ -48,6 +48,44 @@ if (firebaseConfig.projectId) {
   });
 }
 
+/** Web Push (VAPID / web-push library) — payload is JSON from our Node server */
+self.addEventListener('push', (event) => {
+  let payload = {
+    title: 'MedCore',
+    body: '',
+    url: '/',
+    tag: 'medcore',
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/badge-72x72.png',
+  };
+  try {
+    if (event.data) {
+      const parsed = event.data.json();
+      payload = { ...payload, ...parsed };
+    }
+  } catch {
+    try {
+      const t = event.data?.text();
+      if (t) payload.body = t;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const openUrl = String(payload.url || '/');
+  event.waitUntil(
+    self.registration.showNotification(payload.title || 'MedCore', {
+      body: payload.body || '',
+      icon: payload.icon || '/icons/icon-192x192.png',
+      badge: payload.badge || '/icons/badge-72x72.png',
+      tag: String(payload.tag || 'medcore'),
+      renotify: true,
+      vibrate: [180, 100, 180],
+      data: { openUrl },
+    })
+  );
+});
+
 const CACHE_NAME = 'medcore-v3';
 const OFFLINE_URL = '/';
 
