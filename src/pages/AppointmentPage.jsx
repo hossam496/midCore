@@ -98,11 +98,11 @@ const AppointmentPage = () => {
     { id: 4, name: 'التأكيد' },
   ];
 
-  const fees = {
-    consultation: doctor?.consultationFee || 150,
-    service: 15,
-  };
-  const total = fees.consultation + fees.service;
+  const consultationFee =
+    doctor && doctor.consultationFee != null && !Number.isNaN(Number(doctor.consultationFee))
+      ? Math.max(0, Number(doctor.consultationFee))
+      : 150;
+  const total = consultationFee;
 
   // Group slots by time of day
   const morningSlots = availableSlots.filter(s => s?.start && parseInt(s.start.split(':')[0]) < 18);
@@ -346,11 +346,7 @@ const AppointmentPage = () => {
                 <div className="space-y-4 pt-8 border-t border-slate-50 mb-8 relative z-10">
                   <div className="flex justify-between text-xs font-bold">
                     <span className="text-gray-400 uppercase tracking-widest">رسوم الاستشارة</span>
-                    <span className="text-gray-900">${fees.consultation}</span>
-                  </div>
-                  <div className="flex justify-between text-xs font-bold">
-                    <span className="text-gray-400 uppercase tracking-widest">رسوم الخدمة</span>
-                    <span className="text-gray-900">${fees.service}</span>
+                    <span className="text-gray-900">${consultationFee}</span>
                   </div>
                   <div className="flex justify-between text-xl font-black pt-4 text-blue-600 border-t border-dashed border-slate-100">
                     <span>الإجمالي</span>

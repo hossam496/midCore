@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Activity, Clock, FileText, Image as ImageIcon, Save, CheckCircle2, MapPin, Globe, GraduationCap, Briefcase, Plus, X, Upload } from 'lucide-react';
+import { User, Activity, Clock, FileText, Image as ImageIcon, Save, CheckCircle2, MapPin, Globe, GraduationCap, Briefcase, Plus, X, Upload, DollarSign } from 'lucide-react';
 import { getMyDoctorProfile, updateMyDoctorProfile, uploadDoctorImage } from '../../../api/doctorApi';
 import getImageUrl from '../../../utils/imageUrl';
 import { useAuth } from '../../../context/AuthContext';
@@ -24,6 +24,7 @@ const Profile = () => {
     education: [],
     experienceList: [],
     availableSlots: { morning: [], afternoon: [] },
+    consultationFee: 150,
   });
 
   const fileInputRef = useRef(null);
@@ -52,6 +53,10 @@ const Profile = () => {
           slotDuration: doctor.slotDuration || 30,
           bufferTime: doctor.bufferTime || 10,
           maxAppointmentsPerDay: doctor.maxAppointmentsPerDay || 20,
+          consultationFee:
+            doctor.consultationFee != null && !Number.isNaN(Number(doctor.consultationFee))
+              ? Number(doctor.consultationFee)
+              : 150,
         });
       } catch (err) {
         console.error('Failed to fetch profile', err);
@@ -201,6 +206,27 @@ const Profile = () => {
                     type="text" name="specialty" value={formData.specialty} onChange={handleChange} placeholder="e.g. Cardiology"
                     className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                   />
+                </div>
+                <div>
+                  <label className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-2">
+                    <DollarSign size={16} className="text-blue-500" /> Consultation fee (per visit)
+                  </label>
+                  <input
+                    type="number"
+                    name="consultationFee"
+                    min={0}
+                    step={1}
+                    value={formData.consultationFee}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      const n = v === '' ? 0 : Math.max(0, Number(v));
+                      setFormData((prev) => ({ ...prev, consultationFee: Number.isNaN(n) ? 0 : n }));
+                    }}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  />
+                  <p className="mt-1.5 text-[11px] font-medium text-slate-400">
+                    Shown to patients in booking summary; total = this amount (no separate service fee).
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-2">

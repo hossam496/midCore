@@ -73,8 +73,11 @@ const PatientDetailsPage = () => {
 
   const currentStep = 3;
   const doctor = bookingData.doctor || {};
-  const fees = { consultation: doctor.consultationFee || 150, service: 15 };
-  const total = fees.consultation + fees.service;
+  const consultationFee =
+    doctor && doctor.consultationFee != null && !Number.isNaN(Number(doctor.consultationFee))
+      ? Math.max(0, Number(doctor.consultationFee))
+      : 150;
+  const total = consultationFee;
 
   const isFormValid = formData.fullName && formData.email && formData.phone && formData.dob && formData.gender && formData.reason;
 
@@ -324,13 +327,9 @@ const PatientDetailsPage = () => {
                 <div className="space-y-3 pt-6 border-t border-gray-50">
                   <div className="flex justify-between text-sm font-bold">
                     <span className="text-gray-500">رسوم الاستشارة</span>
-                    <span className="text-gray-900">${fees.consultation}</span>
+                    <span className="text-gray-900">${consultationFee}</span>
                   </div>
-                  <div className="flex justify-between text-sm font-bold">
-                    <span className="text-gray-500">رسوم المنصة</span>
-                    <span className="text-gray-900">${fees.service}</span>
-                  </div>
-                  <div className="flex justify-between text-xl font-black pt-4 text-blue-600 border-t border-gray-50 mt-4">
+                  <div className="mt-4 flex justify-between border-t border-gray-50 pt-4 text-xl font-black text-blue-600">
                     <span>التكلفة الإجمالية</span>
                     <span>${total}</span>
                   </div>
