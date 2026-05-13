@@ -13,7 +13,7 @@ const MainLayout = () => {
   return (
     <div className="min-h-screen bg-white selection:bg-blue-100 selection:text-blue-900 flex flex-col">
       <Navbar />
-      <main className="flex-grow">
+      <main className="flex min-h-0 flex-1 flex-col">
         <Outlet />
       </main>
       {!isChatPage && <Footer />}

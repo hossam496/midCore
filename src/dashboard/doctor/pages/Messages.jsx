@@ -52,10 +52,20 @@ const Messages = () => {
   const fileInputRef = useRef(null);
   const chatContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const selectedConvRef = useRef(null);
 
-  const scrollToBottom = (behavior = 'smooth') => {
+  const scrollToBottom = useCallback((behavior = 'smooth') => {
+    const el = chatContainerRef.current;
+    if (el) {
+      el.scrollTo({ top: el.scrollHeight, behavior: behavior === 'auto' ? 'auto' : 'smooth' });
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior });
-  };
+  }, []);
+
+  useEffect(() => {
+    selectedConvRef.current = selectedConv;
+  }, [selectedConv]);
 
   // ── Fetch Conversations ─────────────────────────────────────────────────────
   const fetchConvs = useCallback(async () => {
@@ -72,7 +82,7 @@ const Messages = () => {
         queryConvId ||
         sessionStorage.getItem('medcore_selected_chat');
       if (stateConvId) {
-        const found = res.data.conversations.find((c) => c._id === stateConvId);
+        const found = res.data.conversations.find((c) => String(c._id) === String(stateConvId));
         if (found) {
           setSelectedConv(found);
           setActiveView('chat');
@@ -108,7 +118,7 @@ const Messages = () => {
     } finally {
       setMessagesLoading(false);
     }
-  }, []);
+  }, [scrollToBottom]);
 
   useEffect(() => {
     if (selectedConv?._id) {
@@ -134,48 +144,67 @@ const Messages = () => {
   useEffect(() => {
     if (!channel) return;
 
+    const messageConversationId = (msg) => {
+      const c = msg?.conversation;
+      if (c == null) return '';
+      if (typeof c === 'object' && c._id != null) return String(c._id);
+      return String(c);
+    };
+
     const handleNewMessage = (msg) => {
-      // If message belongs to current chat, add it
-      if (selectedConv && msg.conversation === selectedConv._id) {
-        setMessages(prev => {
-          if (prev.find(m => m._id === msg._id)) return prev;
+      const msgConvId = messageConversationId(msg);
+      const sel = selectedConvRef.current;
+      const selId = sel?._id != null ? String(sel._id) : '';
+
+      if (selId && msgConvId && msgConvId === selId) {
+        setMessages((prev) => {
+          if (prev.find((m) => m._id === msg._id)) return prev;
           return [...prev, msg];
         });
-        setTimeout(() => scrollToBottom('smooth'), 50);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => scrollToBottom('smooth'));
+        });
       }
 
       // Update conversations list
-      setConversations(prev => prev.map(c => {
-        if (c._id === msg.conversation) {
-          const isSelected = selectedConv && selectedConv._id === c._id;
-          const newUnread = isSelected ? 0 : (c.unreadCount?.[user._id] || 0) + 1;
-          return { 
-            ...c, 
-            lastMessage: msg, 
-            updatedAt: new Date(),
-            unreadCount: { ...c.unreadCount, [user._id]: newUnread }
-          };
-        }
-        return c;
-      }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)));
+      setConversations((prev) =>
+        prev
+          .map((c) => {
+            if (String(c._id) !== msgConvId) return c;
+            const isSelected = selId && String(c._id) === selId;
+            const newUnread = isSelected ? 0 : (c.unreadCount?.[user._id] || 0) + 1;
+            return {
+              ...c,
+              lastMessage: msg,
+              updatedAt: new Date(),
+              unreadCount: { ...c.unreadCount, [user._id]: newUnread },
+            };
+          })
+          .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+      );
     };
 
     const handleMessagesSeen = ({ conversationId, seenBy }) => {
-      if (selectedConv?._id === conversationId) {
-        setMessages(prev => prev.map(m => ({
-          ...m,
-          seenBy: m.seenBy.includes(seenBy) ? m.seenBy : [...m.seenBy, seenBy]
-        })));
+      if (String(selectedConvRef.current?._id || '') === String(conversationId || '')) {
+        setMessages((prev) =>
+          prev.map((m) => ({
+            ...m,
+            seenBy:
+              Array.isArray(m.seenBy) && m.seenBy.some((id) => String(id) === String(seenBy))
+                ? m.seenBy
+                : [...(Array.isArray(m.seenBy) ? m.seenBy : []), seenBy],
+          }))
+        );
       }
-      
-      setConversations(prev => prev.map(c => {
-        if (c._id === conversationId) {
+
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (String(c._id) !== String(conversationId)) return c;
           const newUnreadCount = { ...c.unreadCount };
           newUnreadCount[seenBy] = 0;
           return { ...c, unreadCount: newUnreadCount };
-        }
-        return c;
-      }));
+        })
+      );
     };
 
     channel.bind('new-message', handleNewMessage);
@@ -191,7 +220,7 @@ const Messages = () => {
         // Silent catch
       }
     };
-  }, [channel, selectedConv, user._id]);
+  }, [channel, user._id]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleSendMessage = async (e) => {
@@ -301,7 +330,7 @@ const Messages = () => {
   return (
     <div className="flex min-h-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg sm:rounded-3xl sm:shadow-2xl lg:shadow-2xl h-[calc(100dvh-7.5rem)] min-h-[320px] sm:h-[calc(100dvh-8rem)] lg:h-[calc(100vh-7rem)]" dir="rtl">
       {/* ── Left Side: Conversation List ───────────────────────────────────── */}
-      <div className={`w-full lg:w-[400px] border-l border-slate-100 flex flex-col bg-white ${activeView === 'chat' ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`w-full lg:w-[400px] border-l border-slate-100 flex min-h-0 flex-col bg-white ${activeView === 'chat' ? 'hidden lg:flex' : 'flex'}`}>
         {/* Header */}
         <div className="p-6 border-b border-slate-50 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
@@ -336,7 +365,7 @@ const Messages = () => {
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto px-2 space-y-1">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 space-y-1 [-webkit-overflow-scrolling:touch]">
           {filteredConversations.length === 0 ? (
             <div className="p-10 text-center flex flex-col items-center gap-3">
                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
@@ -424,7 +453,7 @@ const Messages = () => {
       </div>
 
       {/* ── Right Side: Active Chat ────────────────────────────────────────── */}
-      <div className={`flex-1 flex flex-col bg-[#F8FAFC] relative ${activeView === 'list' ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`flex min-h-0 flex-1 flex-col bg-[#F8FAFC] relative ${activeView === 'list' ? 'hidden lg:flex' : 'flex'}`}>
         {selectedConv ? (
           <>
             {/* Header */}
@@ -470,7 +499,7 @@ const Messages = () => {
             {/* Chat Area */}
             <div 
               ref={chatContainerRef}
-              className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6 relative scroll-smooth"
+              className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8 space-y-6 relative scroll-smooth overscroll-contain [-webkit-overflow-scrolling:touch]"
               style={{ 
                 backgroundColor: '#f8fafc',
                 backgroundImage: `radial-gradient(#e2e8f0 1px, transparent 0)`,
