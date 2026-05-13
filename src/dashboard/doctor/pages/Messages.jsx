@@ -337,11 +337,16 @@ const Messages = () => {
   }
 
   return (
-    <div className="flex min-h-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg sm:rounded-3xl sm:shadow-2xl lg:shadow-2xl h-[calc(100dvh-7.5rem)] min-h-[320px] sm:h-[calc(100dvh-8rem)] lg:h-[calc(100vh-7rem)]" dir="rtl">
+    <div
+      className="flex min-h-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg sm:rounded-3xl sm:shadow-2xl lg:flex-row lg:shadow-2xl lg:min-h-0 lg:max-h-[min(calc(100dvh-9rem),calc(100vh-8rem))]"
+      dir="rtl"
+    >
       {/* ── Left Side: Conversation List ───────────────────────────────────── */}
-      <div className={`w-full lg:w-[400px] border-l border-slate-100 flex min-h-0 flex-col bg-white ${activeView === 'chat' ? 'hidden lg:flex' : 'flex'}`}>
+      <div
+        className={`flex min-h-0 w-full flex-col border-l border-slate-100 bg-white lg:w-[400px] lg:max-w-[400px] lg:shrink-0 ${activeView === 'chat' ? 'hidden lg:flex' : 'flex'}`}
+      >
         {/* Header */}
-        <div className="p-6 border-b border-slate-50 flex justify-between items-center shrink-0">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-50 p-4 sm:p-6">
           <div className="flex items-center gap-3">
              <div className="w-12 h-12 rounded-2xl bg-blue-50 overflow-hidden flex items-center justify-center text-blue-600 border border-blue-100 relative shadow-inner">
               {user?.profileImage ? <img src={getImageUrl(user.profileImage)} alt="me" className="w-full h-full object-cover" /> : <User size={24} />}
@@ -360,7 +365,7 @@ const Messages = () => {
         </div>
 
         {/* Search */}
-        <div className="px-6 py-4 shrink-0">
+        <div className="shrink-0 px-4 py-3 sm:px-6 sm:py-4">
           <div className="relative group">
             <Search size={18} className="text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 group-focus-within:text-blue-500 transition-colors" />
             <input
@@ -374,7 +379,7 @@ const Messages = () => {
         </div>
 
         {/* List */}
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 space-y-1 [-webkit-overflow-scrolling:touch]">
+        <div className="min-h-0 flex-1 space-y-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-1 [-webkit-overflow-scrolling:touch] sm:px-2">
           {filteredConversations.length === 0 ? (
             <div className="p-10 text-center flex flex-col items-center gap-3">
                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
@@ -399,7 +404,7 @@ const Messages = () => {
                     setSelectedConv(conv);
                     setActiveView('chat');
                   }}
-                  className={`flex items-center gap-4 p-4 cursor-pointer rounded-2xl transition-all duration-200 relative group
+                  className={`group relative flex cursor-pointer items-center gap-3 rounded-2xl p-3 transition-all duration-200 sm:gap-4 sm:p-4
                     ${isActive ? 'bg-blue-50 shadow-sm border border-blue-100/50' : 'hover:bg-slate-50 border border-transparent'}
                   `}
                 >
@@ -462,13 +467,20 @@ const Messages = () => {
       </div>
 
       {/* ── Right Side: Active Chat ────────────────────────────────────────── */}
-      <div className={`flex min-h-0 flex-1 flex-col bg-[#F8FAFC] relative ${activeView === 'list' ? 'hidden lg:flex' : 'flex'}`}>
+      <div
+        className={`relative flex min-h-0 min-w-0 flex-1 flex-col bg-[#F8FAFC] ${activeView === 'list' ? 'hidden lg:flex' : 'flex'}`}
+      >
         {selectedConv ? (
           <>
             {/* Header */}
-            <div className="p-4 bg-white/80 backdrop-blur-md flex justify-between items-center shrink-0 z-10 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <button onClick={() => setActiveView('list')} className="lg:hidden p-2 hover:bg-slate-50 rounded-xl transition-colors">
+            <div className="z-10 flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 bg-white/80 p-3 backdrop-blur-md sm:gap-3 sm:p-4">
+              <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveView('list')}
+                  className="shrink-0 rounded-xl p-2 transition-colors hover:bg-slate-50 lg:hidden"
+                  aria-label="العودة للمحادثات"
+                >
                   <ArrowRight size={20} className="text-slate-600" />
                 </button>
                 <div className="relative">
@@ -492,14 +504,22 @@ const Messages = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2 text-slate-400">
-                <button className="p-2 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
+              <div className="flex shrink-0 items-center gap-0.5 text-slate-400 sm:gap-2">
+                <button
+                  type="button"
+                  className="hidden rounded-xl p-2 transition-all hover:bg-blue-50 hover:text-blue-600 sm:inline-flex"
+                  aria-label="اتصال"
+                >
                   <Phone size={20} />
                 </button>
-                <button className="p-2 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
+                <button
+                  type="button"
+                  className="hidden rounded-xl p-2 transition-all hover:bg-blue-50 hover:text-blue-600 sm:inline-flex"
+                  aria-label="مكالمة فيديو"
+                >
                   <Video size={20} />
                 </button>
-                <button className="p-2 hover:bg-slate-50 rounded-xl transition-all">
+                <button type="button" className="rounded-xl p-2 transition-all hover:bg-slate-50">
                   <MoreVertical size={20} />
                 </button>
               </div>
@@ -508,7 +528,7 @@ const Messages = () => {
             {/* Chat Area */}
             <div 
               ref={chatContainerRef}
-              className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-8 space-y-6 relative scroll-smooth overscroll-contain [-webkit-overflow-scrolling:touch]"
+              className="relative min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto scroll-smooth overscroll-y-contain p-3 [-webkit-overflow-scrolling:touch] sm:space-y-6 sm:p-4 lg:p-8"
               style={{ 
                 backgroundColor: '#f8fafc',
                 backgroundImage: `radial-gradient(#e2e8f0 1px, transparent 0)`,
@@ -556,7 +576,7 @@ const Messages = () => {
                        {isSameSender && <div className="w-8 h-8 shrink-0 ml-2" />}
 
                       <div 
-                        className={`max-w-[75%] lg:max-w-[60%] px-4 py-3 relative shadow-sm
+                        className={`relative max-w-[min(92%,20rem)] px-3 py-2.5 shadow-sm sm:max-w-[75%] sm:px-4 sm:py-3 lg:max-w-[60%]
                           ${isMe 
                             ? 'bg-blue-600 text-white rounded-3xl rounded-tr-none' 
                             : 'bg-white text-slate-800 rounded-3xl rounded-tl-none border border-slate-100'
@@ -594,23 +614,24 @@ const Messages = () => {
             </div>
 
             {/* Input Bar */}
-            <div className="sticky bottom-0 z-20 shrink-0 border-t border-slate-100 bg-white/95 p-3 backdrop-blur-md supports-[padding:max(0px)]:pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-4">
-              <div className="max-w-5xl mx-auto flex items-end gap-3 bg-slate-50 p-2 rounded-[2rem] border border-slate-200 focus-within:border-blue-400 focus-within:bg-white transition-all shadow-inner">
-                <div className="flex gap-1 shrink-0 pb-1">
-                  <button 
+            <div className="sticky bottom-0 z-20 shrink-0 border-t border-slate-100 bg-white/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-md supports-[padding:max(0px)]:pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-4">
+              <div className="mx-auto flex max-w-5xl items-end gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 shadow-inner transition-all focus-within:border-blue-400 focus-within:bg-white sm:gap-3 sm:rounded-[2rem] sm:p-2">
+                <div className="flex shrink-0 gap-0.5 pb-0.5 sm:gap-1 sm:pb-1">
+                  <button
+                    type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2.5 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-full transition-all"
+                    className="rounded-full p-2 text-slate-400 transition-all hover:bg-blue-50 hover:text-blue-600 sm:p-2.5"
                   >
-                    <Paperclip size={20} />
+                    <Paperclip size={20} className="size-[18px] sm:size-5" />
                   </button>
                   <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
                 </div>
 
-                <form onSubmit={handleSendMessage} className="flex-1 min-w-0">
+                <form onSubmit={handleSendMessage} className="min-w-0 flex-1">
                   <textarea
                     rows={1}
                     placeholder="اكتب رسالتك هنا..."
-                    className="w-full bg-transparent border-none outline-none py-3 px-2 text-sm font-medium resize-none max-h-32 text-slate-800 placeholder:text-slate-400"
+                    className="max-h-28 w-full resize-none border-none bg-transparent px-1 py-2.5 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 sm:max-h-32 sm:px-2 sm:py-3"
                     value={newMessage}
                     onChange={handleInputChange}
                     onKeyDown={(e) => {
@@ -622,10 +643,14 @@ const Messages = () => {
                   />
                 </form>
 
-                <div className="shrink-0 flex gap-1 pb-1 pr-1">
-                   <button className="p-2.5 text-slate-400 hover:text-blue-600 transition-colors">
-                      <Smile size={20} />
-                   </button>
+                <div className="flex shrink-0 gap-0.5 pb-0.5 pr-0.5 sm:gap-1 sm:pb-1 sm:pr-1">
+                  <button
+                    type="button"
+                    className="hidden rounded-full p-2 text-slate-400 transition-colors hover:text-blue-600 sm:inline-flex sm:p-2.5"
+                    aria-label="إيموجي"
+                  >
+                    <Smile size={20} />
+                  </button>
                    <AnimatePresence mode="wait">
                     {newMessage.trim() ? (
                       <motion.button 
@@ -634,9 +659,9 @@ const Messages = () => {
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.5, opacity: 0 }}
                         onClick={handleSendMessage} 
-                        className="bg-blue-600 text-white p-3 rounded-full shadow-lg shadow-blue-200 hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all"
+                        className="rounded-full bg-blue-600 p-2.5 text-white shadow-lg shadow-blue-200 transition-all hover:scale-105 hover:bg-blue-700 active:scale-95 sm:p-3"
                       >
-                        <Send size={18} className="mr-0.5" />
+                        <Send size={18} className="mr-0.5 sm:size-[18px]" />
                       </motion.button>
                     ) : (
                       <motion.button 
@@ -644,7 +669,7 @@ const Messages = () => {
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.5, opacity: 0 }}
-                        className="bg-slate-200 text-slate-500 p-3 rounded-full hover:bg-slate-300 transition-all"
+                        className="rounded-full bg-slate-200 p-2.5 text-slate-500 transition-all hover:bg-slate-300 sm:p-3"
                       >
                         <Mic size={18} />
                       </motion.button>
@@ -664,8 +689,8 @@ const Messages = () => {
                <div className="w-32 h-32 bg-blue-50 rounded-[3rem] flex items-center justify-center text-blue-600 mb-8 shadow-xl shadow-blue-100/50 border border-blue-100">
                   <MessageSquare size={54} />
                </div>
-               <h2 className="text-3xl font-black text-slate-800 mb-4 tracking-tight">مرحباً بك في المحادثات</h2>
-               <p className="text-slate-500 text-sm font-medium leading-relaxed mb-10">
+               <h2 className="mb-4 text-2xl font-black tracking-tight text-slate-800 sm:text-3xl">مرحباً بك في المحادثات</h2>
+               <p className="mb-8 text-sm font-medium leading-relaxed text-slate-500 sm:mb-10">
                  اختر أحد المرضى أو الأطباء من القائمة الجانبية لبدء المحادثة الفورية. 
                  رسائلك مشفرة تماماً لضمان خصوصيتك الطبية.
                </p>

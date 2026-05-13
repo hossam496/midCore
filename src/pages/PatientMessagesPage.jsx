@@ -3,16 +3,16 @@ import Messages from '../dashboard/doctor/pages/Messages';
 
 const PatientMessagesPage = () => {
   return (
-    <div className="min-h-screen bg-[#f8fafc] pt-24 lg:pt-32 pb-4 lg:pb-10 flex min-h-0 flex-1 flex-col">
-      <div className="container mx-auto px-1 sm:px-4 md:px-8 max-w-7xl flex min-h-0 flex-1 flex-col">
-        <div className="mb-4 lg:mb-8 px-4 sm:px-0 hidden sm:block">
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight">رسائلك</h1>
-          <p className="text-sm lg:text-base text-slate-500 mt-1 font-medium">
+    <div className="flex min-h-0 flex-1 flex-col bg-[#f8fafc] pt-20 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pt-24 sm:pb-4 lg:pt-32 lg:pb-10">
+      <div className="container mx-auto flex min-h-0 max-w-7xl flex-1 flex-col px-2 sm:px-4 md:px-8">
+        <div className="mb-3 hidden shrink-0 px-1 sm:mb-4 sm:block lg:mb-8">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-800 lg:text-3xl">رسائلك</h1>
+          <p className="mt-1 text-sm font-medium text-slate-500 lg:text-base">
             تحدث مع أطبائك وابق على اطلاع دائم باستشاراتك الطبية.
           </p>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-xl shadow-blue-900/5 h-[calc(100dvh-7.5rem)] min-h-[280px] sm:h-[calc(100dvh-8rem)] lg:h-[min(calc(100dvh-9rem),calc(100vh-8rem))] lg:max-h-[calc(100dvh-8rem)]">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg shadow-blue-900/5 sm:rounded-3xl sm:shadow-xl">
           <Messages />
         </div>
       </div>
