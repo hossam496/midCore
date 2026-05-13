@@ -591,7 +591,7 @@ const Messages = () => {
 
   return (
     <div
-      className="flex min-h-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg sm:rounded-3xl sm:shadow-2xl lg:flex-row lg:shadow-2xl lg:min-h-0 lg:max-h-[min(calc(100dvh-9rem),calc(100vh-8rem))]"
+      className="flex min-h-0 w-full h-full max-w-full flex-1 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg sm:rounded-3xl sm:shadow-2xl lg:flex-row lg:shadow-2xl"
       dir="rtl"
     >
       {/* ── Left Side: Conversation List ───────────────────────────────────── */}

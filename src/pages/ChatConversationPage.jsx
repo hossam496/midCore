@@ -15,7 +15,7 @@ const ChatConversationPage = () => {
             محادثة مباشرة — التحديثات فورية عبر Pusher.
           </p>
         </div>
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-lg shadow-blue-900/5 sm:rounded-3xl sm:shadow-xl">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <Messages />
         </div>
       </div>
