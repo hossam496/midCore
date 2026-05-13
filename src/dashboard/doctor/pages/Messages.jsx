@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import {
   Search,
   MoreVertical,
@@ -34,7 +34,6 @@ const Messages = () => {
   const { channel, emitTyping, typingStatus } = useSocket();
   const location = useLocation();
   const routeParams = useParams();
-  const [searchParams] = useSearchParams();
 
   const [conversations, setConversations] = useState([]);
   const [selectedConv, setSelectedConv] = useState(null);
@@ -53,6 +52,7 @@ const Messages = () => {
   const chatContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const selectedConvRef = useRef(null);
+  const convsFetchInFlight = useRef(false);
 
   const scrollToBottom = useCallback((behavior = 'smooth') => {
     const el = chatContainerRef.current;
@@ -67,17 +67,25 @@ const Messages = () => {
     selectedConvRef.current = selectedConv;
   }, [selectedConv]);
 
+  const pathConvId = routeParams.conversationId ?? '';
+  const queryString = location.search ?? '';
+  const navSelectedConvId =
+    location.state && location.state.selectedConversationId != null
+      ? String(location.state.selectedConversationId)
+      : '';
+
   // ── Fetch Conversations ─────────────────────────────────────────────────────
   const fetchConvs = useCallback(async () => {
+    if (convsFetchInFlight.current) return;
+    convsFetchInFlight.current = true;
     try {
       setLoading(true);
       const res = await getConversations();
       setConversations(res.data.conversations || []);
 
-      const queryConvId = searchParams.get('c');
-      const pathConvId = routeParams.conversationId;
+      const queryConvId = new URLSearchParams(queryString).get('c');
       const stateConvId =
-        location.state?.selectedConversationId ||
+        navSelectedConvId ||
         pathConvId ||
         queryConvId ||
         sessionStorage.getItem('medcore_selected_chat');
@@ -93,9 +101,10 @@ const Messages = () => {
       console.error('Failed to fetch conversations', err);
       setError('تعذر تحميل المحادثات. يرجى المحاولة مرة أخرى.');
     } finally {
+      convsFetchInFlight.current = false;
       setLoading(false);
     }
-  }, [location.state, location.search, searchParams, routeParams.conversationId]);
+  }, [pathConvId, queryString, navSelectedConvId]);
 
   useEffect(() => {
     fetchConvs();
