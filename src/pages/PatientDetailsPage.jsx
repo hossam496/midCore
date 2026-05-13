@@ -81,11 +81,14 @@ const PatientDetailsPage = () => {
 
   const isFormValid = formData.fullName && formData.email && formData.phone && formData.dob && formData.gender && formData.reason;
 
+  const isSubmittingRef = useRef(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isFormValid) return;
+    if (!isFormValid || isSubmittingRef.current || submitting) return;
 
     try {
+      isSubmittingRef.current = true;
       setSubmitting(true);
       setError(null);
 
@@ -116,6 +119,7 @@ const PatientDetailsPage = () => {
     } catch (err) {
       console.error('Booking error:', err);
       setError(err.response?.data?.message || 'فشل حجز الموعد. الرجاء المحاولة مرة أخرى.');
+      isSubmittingRef.current = false;
     } finally {
       setSubmitting(false);
     }
