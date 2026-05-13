@@ -153,6 +153,7 @@ const Messages = () => {
 
   const buildMessageInteractionProps = useCallback(
     (msg) => {
+      if (msg.pending) return {};
       const mine = getMessageSenderId(msg) === String(user?._id ?? '');
       if (!mine || msg.isDeleted) return {};
 
@@ -404,8 +405,43 @@ const Messages = () => {
     const file = e.target.files[0];
     if (!file || !selectedConv) return;
 
+    const clientId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const previewUrl = URL.createObjectURL(file);
+    const isImage = file.type.startsWith('image/');
+    const optimistic = {
+      _id: clientId,
+      _clientId: clientId,
+      pending: true,
+      conversation: selectedConv._id,
+      sender: user,
+      messageType: isImage ? 'image' : 'file',
+      fileUrl: previewUrl,
+      fileName: file.name,
+      text: isImage ? 'جاري إرسال الصورة…' : 'جاري إرسال الملف…',
+      createdAt: new Date().toISOString(),
+      seenBy: [user._id],
+      isDeleted: false,
+    };
+
+    setMessages((prev) => [...prev, optimistic]);
+    setConversations((prev) =>
+      prev
+        .map((c) =>
+          c._id === selectedConv._id
+            ? { ...c, lastMessage: optimistic, updatedAt: new Date() }
+            : c
+        )
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    );
+    requestAnimationFrame(() => scrollToBottom('auto'));
+
     const formData = new FormData();
     formData.append('file', file);
+
+    const prevLastMessage =
+      selectedConv.lastMessage && typeof selectedConv.lastMessage === 'object'
+        ? { ...selectedConv.lastMessage }
+        : selectedConv.lastMessage ?? null;
 
     try {
       setIsUploading(true);
@@ -416,14 +452,45 @@ const Messages = () => {
         messageType: fileType === 'image' ? 'image' : 'file',
         fileUrl,
         fileName,
-        text: `أرسل ${fileType === 'image' ? 'صورة' : 'ملفاً'}`
+        text: `أرسل ${fileType === 'image' ? 'صورة' : 'ملفاً'}`,
       });
 
       const msg = messageRes.data.message;
-      setMessages(prev => [...prev, msg]);
+      URL.revokeObjectURL(previewUrl);
+
+      setMessages((prev) => {
+        const idx = prev.findIndex((m) => m._clientId === clientId);
+        const next = prev
+          .filter((m) => m._clientId !== clientId)
+          .filter((m) => String(m._id) !== String(msg._id));
+        if (idx < 0) return [...next, msg];
+        return [...next.slice(0, idx), msg, ...next.slice(idx)];
+      });
+
+      setConversations((prev) =>
+        prev
+          .map((c) =>
+            c._id === selectedConv._id
+              ? { ...c, lastMessage: msg, updatedAt: new Date() }
+              : c
+          )
+          .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+      );
       setTimeout(() => scrollToBottom('smooth'), 50);
     } catch (err) {
       console.error('Failed to upload file', err);
+      URL.revokeObjectURL(previewUrl);
+      setMessages((prev) => prev.filter((m) => m._clientId !== clientId));
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (c._id !== selectedConv._id) return c;
+          const lm = c.lastMessage;
+          if (lm && (lm._clientId === clientId || lm._id === clientId)) {
+            return { ...c, lastMessage: prevLastMessage };
+          }
+          return c;
+        })
+      );
       toast.error('فشل في رفع الملف.');
     } finally {
       setIsUploading(false);
@@ -753,6 +820,7 @@ const Messages = () => {
                   const isSameSender = prevMsg && prevSid === curSid;
                   const isSeen = msg.seenBy?.length > 1;
                   const isDeleted = !!msg.isDeleted;
+                  const isPending = !!msg.pending;
                   const bubbleClass = isDeleted
                     ? 'rounded-3xl border border-slate-200 bg-slate-200/90 text-slate-600'
                     : isMe
@@ -761,7 +829,7 @@ const Messages = () => {
 
                   return (
                     <motion.div 
-                      key={msg._id || idx}
+                      key={msg._id || msg._clientId || idx}
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       className={`flex ${isMe ? 'justify-start flex-row-reverse' : 'justify-start'} ${isSameSender ? 'mt-1' : 'mt-6'}`}
@@ -782,13 +850,31 @@ const Messages = () => {
                         className={`relative max-w-[min(92%,20rem)] px-3 py-2.5 shadow-sm sm:max-w-[75%] sm:px-4 sm:py-3 lg:max-w-[60%] ${bubbleClass}`}
                       >
                         {!isDeleted && msg.messageType === 'image' && msg.fileUrl && (
-                          <div className="mb-2 flex min-h-[150px] items-center justify-center overflow-hidden rounded-2xl border border-black/5 bg-slate-50">
+                          <div className="relative mb-2 flex min-h-[150px] items-center justify-center overflow-hidden rounded-2xl border border-black/5 bg-slate-50">
                             <img 
                               src={getImageUrl(msg.fileUrl)} 
                               alt="" 
-                              className="h-auto max-w-full cursor-pointer object-cover transition-opacity hover:opacity-90" 
-                              onClick={() => setSelectedImage(getImageUrl(msg.fileUrl))}
+                              className={`h-auto max-w-full object-cover transition-opacity ${isPending ? 'opacity-90' : 'cursor-pointer hover:opacity-90'}`}
+                              onClick={() => !isPending && setSelectedImage(getImageUrl(msg.fileUrl))}
                             />
+                            {isPending && (
+                              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900/35 backdrop-blur-[1px]">
+                                <Loader2 className="h-8 w-8 animate-spin text-white" />
+                                <span className="text-[11px] font-bold text-white">جاري الرفع…</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {!isDeleted && msg.messageType === 'file' && !msg.fileUrl?.startsWith('blob:') && (
+                          <div className="mb-2 flex items-center gap-2 rounded-xl border border-black/5 bg-slate-50 px-3 py-2 text-slate-700">
+                            <FileText size={20} className="shrink-0 text-blue-600" />
+                            <span className="min-w-0 truncate text-xs font-bold">{msg.fileName}</span>
+                          </div>
+                        )}
+                        {!isDeleted && msg.messageType === 'file' && isPending && msg.fileUrl && (
+                          <div className="mb-2 flex min-h-[72px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/40 bg-white/10 px-3 py-4">
+                            <Loader2 className="h-7 w-7 animate-spin text-white" />
+                            <span className="text-[11px] font-bold text-white/95">جاري رفع الملف…</span>
                           </div>
                         )}
 
@@ -805,8 +891,11 @@ const Messages = () => {
                             <span className="text-[9px] font-bold">
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            {isMe && !isDeleted && (
+                            {isMe && !isDeleted && !isPending && (
                               isSeen ? <CheckCheck size={14} className={isMe ? 'text-white' : ''} /> : <Check size={14} />
+                            )}
+                            {isMe && !isDeleted && isPending && (
+                              <Loader2 size={14} className="shrink-0 animate-spin text-blue-100" />
                             )}
                           </div>
                         </div>

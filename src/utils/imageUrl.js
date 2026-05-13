@@ -39,7 +39,7 @@ export const getImageUrl = (path) => {
   }
 
   // If it's already a valid absolute URL (e.g. Google avatar) or a Data URI (Base64), return as is
-  if (path.startsWith("http") || path.startsWith("data:")) {
+  if (path.startsWith('http') || path.startsWith('data:') || path.startsWith('blob:')) {
     return path;
   }
 
