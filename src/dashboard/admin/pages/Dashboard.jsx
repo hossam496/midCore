@@ -21,21 +21,34 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
       try {
         const [statsRes, doctorsRes] = await Promise.all([
           getAdminStats(),
           getDoctors()
         ]);
+        if (cancelled) return;
         setStatsData(statsRes.data.stats);
         setStaffData(doctorsRes.data.doctors.slice(0, 5)); // Show top 5
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchData();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchData();
+    };
+    const onFocus = () => fetchData();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   const stats = [
@@ -49,11 +62,11 @@ const AdminDashboard = () => {
     },
     {
       title: 'الإيرادات الشهرية',
-      value: `$${statsData?.monthlyRevenue?.toLocaleString() || '0'}`,
+      value: `$${Number(statsData?.monthlyRevenue ?? 0).toLocaleString()}`,
       icon: DollarSign,
       trend: 'up',
       trendValue: '+0%',
-      secondaryText: 'الإيرادات المقدرة',
+      secondaryText: 'مجموع رسوم المواعيد المحفوظة (غير الملغاة)',
       variant: 'emerald'
     },
     {

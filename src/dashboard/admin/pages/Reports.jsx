@@ -16,17 +16,26 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchStats = async () => {
       try {
         const res = await getAdminStats();
-        setStatsData(res.data.stats);
+        if (!cancelled) setStatsData(res.data.stats);
       } catch (err) {
         console.error('Failed to fetch reports stats:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchStats();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchStats();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   const stats = [
@@ -44,7 +53,27 @@ const Reports = () => {
     { dept: 'Radiology', time: '7m', percent: 25, color: 'bg-emerald-400' },
   ];
 
-  const revenueChartData = statsData?.revenueData || [40, 65, 55, 75, 90, 80];
+  /** Dollar totals per month (API); bar height = share of max month in range */
+  const revenueDollars = Array.isArray(statsData?.revenueData)
+    ? statsData.revenueData
+    : [0, 0, 0, 0, 0, 0];
+  const revenueLabels = Array.isArray(statsData?.revenueDataLabels)
+    ? statsData.revenueDataLabels
+    : [];
+  const maxRevenue = Math.max(...revenueDollars, 1);
+  const revenueChartHeights = revenueDollars.map((amt) =>
+    maxRevenue <= 0 ? 0 : Math.max((amt / maxRevenue) * 100, amt > 0 ? 8 : 0)
+  );
+
+  const formatMonthLabel = (ym) => {
+    if (!ym || typeof ym !== 'string' || !ym.includes('-')) return '';
+    const [Y, M] = ym.split('-').map(Number);
+    if (!Y || !M) return ym;
+    return new Date(Date.UTC(Y, M - 1, 1)).toLocaleDateString('en-US', {
+      month: 'short',
+      year: '2-digit',
+    });
+  };
 
   if (loading) return <div className="p-8 text-center font-bold text-slate-500">Loading Analytics...</div>;
 
@@ -97,17 +126,19 @@ const Reports = () => {
           </div>
           <div className="h-[300px] w-full flex items-end justify-between relative px-4">
             <div className="absolute inset-x-0 bottom-0 h-px bg-slate-100"></div>
-            {revenueChartData.map((h, i) => (
+            {revenueChartHeights.map((h, i) => (
               <div key={i} className="flex flex-col items-center gap-4 w-full">
                 <div 
                   className="w-1/2 bg-blue-600 rounded-t-xl transition-all duration-1000 ease-out hover:bg-blue-500 cursor-pointer relative group"
                   style={{ height: `${h}%` }}
                 >
                   <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap font-bold">
-                    ${h * 10}k
+                    ${Number(revenueDollars[i] ?? 0).toLocaleString()}
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][i]}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                  {formatMonthLabel(revenueLabels[i]) || `M${i + 1}`}
+                </span>
               </div>
             ))}
           </div>
