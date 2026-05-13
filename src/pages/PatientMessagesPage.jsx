@@ -3,7 +3,7 @@ import Messages from '../dashboard/doctor/pages/Messages';
 
 const PatientMessagesPage = () => {
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-[#f8fafc] pt-20 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pt-24 sm:pb-4 lg:pt-32 lg:pb-10">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#f8fafc] pt-20 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:pt-24 sm:pb-4 lg:pt-32 lg:pb-10">
       <div className="container mx-auto flex min-h-0 max-w-7xl flex-1 flex-col px-2 sm:px-4 md:px-8">
         <div className="mb-3 hidden shrink-0 px-1 sm:mb-4 sm:block lg:mb-8">
           <h1 className="text-2xl font-bold tracking-tight text-slate-800 lg:text-3xl">رسائلك</h1>

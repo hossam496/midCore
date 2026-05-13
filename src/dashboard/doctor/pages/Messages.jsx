@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useParams } from 'react-router-dom';
 import {
   Search,
@@ -20,10 +21,12 @@ import {
   Loader2,
   Phone,
   Video,
-  Circle
+  Circle,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getConversations, getMessages, sendMessageApi, uploadChatFile } from '../../../api/chatApi';
+import { getConversations, getMessages, sendMessageApi, uploadChatFile, updateMessageApi, deleteMessageApi } from '../../../api/chatApi';
 import getImageUrl from '../../../utils/imageUrl';
 import { useAuth } from '../../../context/AuthContext';
 import { useSocket } from '../../../context/SocketContext';
@@ -46,6 +49,10 @@ const Messages = () => {
   const [activeView, setActiveView] = useState('list'); // 'list', 'chat'
   const [error, setError] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [messageSheet, setMessageSheet] = useState(null);
+  const [editModal, setEditModal] = useState(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -53,6 +60,8 @@ const Messages = () => {
   const typingTimeoutRef = useRef(null);
   const selectedConvRef = useRef(null);
   const convsFetchInFlight = useRef(false);
+  const longPressTimerRef = useRef(null);
+  const longPressMsgIdRef = useRef(null);
 
   const scrollToBottom = useCallback((behavior = 'smooth') => {
     const el = chatContainerRef.current;
@@ -129,6 +138,68 @@ const Messages = () => {
     }
   }, [scrollToBottom]);
 
+  const getMessageSenderId = useCallback((msg) => {
+    if (!msg?.sender) return '';
+    return String(msg.sender._id ?? msg.sender);
+  }, []);
+
+  const clearLongPressTimer = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressMsgIdRef.current = null;
+  }, []);
+
+  const buildMessageInteractionProps = useCallback(
+    (msg) => {
+      const mine = getMessageSenderId(msg) === String(user?._id ?? '');
+      if (!mine || msg.isDeleted) return {};
+
+      const startTimer = (msgId) => {
+        clearLongPressTimer();
+        longPressMsgIdRef.current = msgId;
+        longPressTimerRef.current = setTimeout(() => {
+          longPressTimerRef.current = null;
+          if (longPressMsgIdRef.current === msgId) {
+            setMessageSheet(msg);
+          }
+        }, 520);
+      };
+
+      return {
+        onTouchStart: () => startTimer(msg._id),
+        onTouchEnd: clearLongPressTimer,
+        onTouchCancel: clearLongPressTimer,
+        onTouchMove: clearLongPressTimer,
+        onPointerDown: (e) => {
+          if (e.pointerType === 'touch') return;
+          startTimer(msg._id);
+        },
+        onPointerUp: clearLongPressTimer,
+        onPointerCancel: clearLongPressTimer,
+        onPointerLeave: clearLongPressTimer,
+        onContextMenu: (e) => {
+          e.preventDefault();
+          setMessageSheet(msg);
+        },
+      };
+    },
+    [user?._id, getMessageSenderId, clearLongPressTimer]
+  );
+
+  useEffect(() => {
+    const el = chatContainerRef.current;
+    if (!el) return undefined;
+    const onScroll = () => clearLongPressTimer();
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [selectedConv?._id, clearLongPressTimer]);
+
+  useEffect(() => {
+    return () => clearLongPressTimer();
+  }, [clearLongPressTimer]);
+
   useEffect(() => {
     if (selectedConv?._id) {
       console.log('🔄 Fetching messages for:', selectedConv._id);
@@ -148,6 +219,12 @@ const Messages = () => {
       fetchMessages(selectedConv._id);
     }
   }, [selectedConv?._id, fetchMessages, user._id]);
+
+  useEffect(() => {
+    setMessageSheet(null);
+    setEditModal(null);
+    clearLongPressTimer();
+  }, [selectedConv?._id, clearLongPressTimer]);
 
   // ── Pusher Event Listeners ──────────────────────────────────────────────────
   useEffect(() => {
@@ -216,20 +293,61 @@ const Messages = () => {
       );
     };
 
+    const handleMessageUpdated = ({ conversationId, message: updated }) => {
+      if (!updated?._id) return;
+      const selId = selectedConvRef.current?._id != null ? String(selectedConvRef.current._id) : '';
+      if (selId && String(conversationId) === selId) {
+        setMessages((prev) => prev.map((m) => (String(m._id) === String(updated._id) ? { ...m, ...updated } : m)));
+      }
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (String(c._id) !== String(conversationId)) return c;
+          const lm = c.lastMessage;
+          const lmId = lm?._id != null ? String(lm._id) : lm != null ? String(lm) : '';
+          if (lmId && lmId === String(updated._id)) {
+            return { ...c, lastMessage: { ...(typeof lm === 'object' ? lm : {}), ...updated } };
+          }
+          return c;
+        })
+      );
+    };
+
+    const handleMessageDeleted = ({ conversationId, message: tombstone, conversationLastMessage }) => {
+      if (!tombstone?._id) return;
+      const selId = selectedConvRef.current?._id != null ? String(selectedConvRef.current._id) : '';
+      if (selId && String(conversationId) === selId) {
+        setMessages((prev) => prev.map((m) => (String(m._id) === String(tombstone._id) ? { ...m, ...tombstone } : m)));
+      }
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (String(c._id) !== String(conversationId)) return c;
+          const next = { ...c };
+          if (conversationLastMessage !== undefined) {
+            next.lastMessage = conversationLastMessage;
+          }
+          return next;
+        })
+      );
+    };
+
     channel.bind('new-message', handleNewMessage);
     channel.bind('message-seen', handleMessagesSeen);
+    channel.bind('message-updated', handleMessageUpdated);
+    channel.bind('message-deleted', handleMessageDeleted);
 
     return () => {
       try {
         if (channel) {
           channel.unbind('new-message', handleNewMessage);
           channel.unbind('message-seen', handleMessagesSeen);
+          channel.unbind('message-updated', handleMessageUpdated);
+          channel.unbind('message-deleted', handleMessageDeleted);
         }
       } catch (error) {
         // Silent catch
       }
     };
-  }, [channel, user._id]);
+  }, [channel, user._id, scrollToBottom]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleSendMessage = async (e) => {
@@ -317,6 +435,74 @@ const Messages = () => {
     return conv?.participants?.find((p) => String(p._id) !== String(user?._id));
   };
 
+  const handleConfirmDeleteMessage = async () => {
+    if (!messageSheet || !selectedConv) return;
+    const mid = messageSheet._id;
+    if (!window.confirm('حذف الرسالة للجميع؟ لن يستطيع أحد استرجاعها.')) return;
+    setDeletingId(mid);
+    try {
+      const res = await deleteMessageApi(selectedConv._id, mid);
+      const { message: tombstone, conversationLastMessage } = res.data;
+      setMessages((prev) =>
+        prev.map((m) => (String(m._id) === String(mid) ? { ...m, ...tombstone } : m))
+      );
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (String(c._id) !== String(selectedConv._id)) return c;
+          return { ...c, lastMessage: conversationLastMessage ?? c.lastMessage };
+        })
+      );
+      setMessageSheet(null);
+      toast.success('تم حذف الرسالة.');
+    } catch (err) {
+      console.error(err);
+      toast.error('تعذر حذف الرسالة.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleOpenEditFromSheet = () => {
+    if (!messageSheet) return;
+    setEditModal({ message: messageSheet, text: messageSheet.text || '' });
+    setMessageSheet(null);
+  };
+
+  const handleSaveEditedMessage = async () => {
+    if (!editModal?.message || !selectedConv) return;
+    const text = editModal.text?.trim();
+    if (!text) {
+      toast.error('اكتب نصاً.');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const res = await updateMessageApi(selectedConv._id, editModal.message._id, text);
+      const updated = res.data.message;
+      setMessages((prev) =>
+        prev.map((m) => (String(m._id) === String(updated._id) ? { ...m, ...updated } : m))
+      );
+      setConversations((prev) =>
+        prev.map((c) => {
+          if (String(c._id) !== String(selectedConv._id)) return c;
+          const lm = c.lastMessage;
+          const lmId = lm?._id != null ? String(lm._id) : lm != null ? String(lm) : '';
+          if (lmId === String(updated._id)) {
+            return { ...c, lastMessage: { ...(typeof lm === 'object' ? lm : {}), ...updated } };
+          }
+          return c;
+        })
+      );
+      setEditModal(null);
+      toast.success('تم حفظ التعديل.');
+    } catch (err) {
+      console.error(err);
+      toast.error('تعذر حفظ التعديل.');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const filteredConversations = conversations.filter(conv => {
     const other = getOtherParticipant(conv);
     return other?.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -394,6 +580,12 @@ const Messages = () => {
               const isUserOnlineNow = !!other?.isOnline;
               const unread = conv.unreadCount?.[user._id] || 0;
               const isTyping = typingStatus[conv._id];
+              const lm = conv.lastMessage;
+              const lmSenderId = lm?.sender
+                ? typeof lm.sender === 'object'
+                  ? String(lm.sender._id ?? '')
+                  : String(lm.sender)
+                : '';
 
               return (
                 <motion.div
@@ -431,17 +623,19 @@ const Messages = () => {
                             <span className="text-green-500 animate-pulse font-bold">يكتب الآن...</span>
                           ) : (
                             <>
-                              {conv.lastMessage?.sender === user._id && (
-                                <CheckCheck size={14} className={conv.lastMessage?.seenBy?.length > 1 ? 'text-blue-400' : 'text-slate-300'} />
+                              {lmSenderId === String(user._id) && !lm?.isDeleted && (
+                                <CheckCheck size={14} className={lm?.seenBy?.length > 1 ? 'text-blue-400' : 'text-slate-300'} />
                               )}
-                               {conv.lastMessage?.messageType === 'image' ? (
-                                 <span className="flex items-center gap-1 italic">
-                                   <Camera size={12} className="text-blue-400" />
-                                   أرسل صورة
-                                 </span>
-                               ) : (
-                                 conv.lastMessage?.text || 'ابدأ المحادثة الآن'
-                               )}
+                              {lm?.isDeleted ? (
+                                <span className="italic text-slate-400">رسالة محذوفة</span>
+                              ) : lm?.messageType === 'image' ? (
+                                <span className="flex items-center gap-1 italic">
+                                  <Camera size={12} className="text-blue-400" />
+                                  أرسل صورة
+                                </span>
+                              ) : (
+                                lm?.text || 'ابدأ المحادثة الآن'
+                              )}
                             </>
                           )}
                        </p>
@@ -468,7 +662,7 @@ const Messages = () => {
 
       {/* ── Right Side: Active Chat ────────────────────────────────────────── */}
       <div
-        className={`relative flex min-h-0 min-w-0 flex-1 flex-col bg-[#F8FAFC] ${activeView === 'list' ? 'hidden lg:flex' : 'flex'}`}
+        className={`relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#F8FAFC] ${activeView === 'list' ? 'hidden lg:flex' : 'flex'}`}
       >
         {selectedConv ? (
           <>
@@ -528,7 +722,7 @@ const Messages = () => {
             {/* Chat Area */}
             <div 
               ref={chatContainerRef}
-              className="relative min-h-0 flex-1 space-y-4 overflow-x-hidden overflow-y-auto scroll-smooth overscroll-y-contain p-3 [-webkit-overflow-scrolling:touch] sm:space-y-6 sm:p-4 lg:p-8"
+              className="relative min-h-0 flex-1 touch-pan-y space-y-4 overflow-x-hidden overflow-y-auto overscroll-contain scroll-smooth p-3 [-webkit-overflow-scrolling:touch] sm:space-y-6 sm:p-4 lg:p-8"
               style={{ 
                 backgroundColor: '#f8fafc',
                 backgroundImage: `radial-gradient(#e2e8f0 1px, transparent 0)`,
@@ -552,10 +746,18 @@ const Messages = () => {
                 </div>
               ) : (
                 messages.map((msg, idx) => {
-                  const isMe = msg.sender?._id === user?._id || msg.sender === user?._id;
+                  const isMe = getMessageSenderId(msg) === String(user?._id ?? '');
                   const prevMsg = messages[idx - 1];
-                  const isSameSender = prevMsg && (prevMsg.sender?._id === (msg.sender?._id || msg.sender) || prevMsg.sender === (msg.sender?._id || msg.sender));
+                  const prevSid = prevMsg ? getMessageSenderId(prevMsg) : '';
+                  const curSid = getMessageSenderId(msg);
+                  const isSameSender = prevMsg && prevSid === curSid;
                   const isSeen = msg.seenBy?.length > 1;
+                  const isDeleted = !!msg.isDeleted;
+                  const bubbleClass = isDeleted
+                    ? 'rounded-3xl border border-slate-200 bg-slate-200/90 text-slate-600'
+                    : isMe
+                      ? 'select-none rounded-3xl rounded-tr-none bg-blue-600 text-white'
+                      : 'rounded-3xl rounded-tl-none border border-slate-100 bg-white text-slate-800';
 
                   return (
                     <motion.div 
@@ -568,40 +770,43 @@ const Messages = () => {
                           <div className={`w-8 h-8 rounded-xl shrink-0 mt-auto ${isMe ? 'mr-2' : 'ml-2'} overflow-hidden border border-white shadow-sm bg-slate-100`}>
                              <img 
                                 src={isMe ? getImageUrl(user.profileImage) : getImageUrl(activeOther?.profileImage)} 
-                                className="w-full h-full object-cover"
-                                alt="avatar"
+                                className="h-full w-full object-cover"
+                                alt=""
                              />
                           </div>
                        )}
-                       {isSameSender && <div className="w-8 h-8 shrink-0 ml-2" />}
+                       {isSameSender && <div className="ml-2 h-8 w-8 shrink-0" />}
 
                       <div 
-                        className={`relative max-w-[min(92%,20rem)] px-3 py-2.5 shadow-sm sm:max-w-[75%] sm:px-4 sm:py-3 lg:max-w-[60%]
-                          ${isMe 
-                            ? 'bg-blue-600 text-white rounded-3xl rounded-tr-none' 
-                            : 'bg-white text-slate-800 rounded-3xl rounded-tl-none border border-slate-100'
-                          }
-                        `}
+                        {...buildMessageInteractionProps(msg)}
+                        className={`relative max-w-[min(92%,20rem)] px-3 py-2.5 shadow-sm sm:max-w-[75%] sm:px-4 sm:py-3 lg:max-w-[60%] ${bubbleClass}`}
                       >
-                        {msg.messageType === 'image' && (
-                          <div className="mb-2 overflow-hidden rounded-2xl bg-slate-50 min-h-[150px] flex items-center justify-center border border-black/5">
+                        {!isDeleted && msg.messageType === 'image' && msg.fileUrl && (
+                          <div className="mb-2 flex min-h-[150px] items-center justify-center overflow-hidden rounded-2xl border border-black/5 bg-slate-50">
                             <img 
                               src={getImageUrl(msg.fileUrl)} 
-                              alt="img" 
-                              className="max-w-full h-auto cursor-pointer object-cover hover:opacity-90 transition-opacity" 
+                              alt="" 
+                              className="h-auto max-w-full cursor-pointer object-cover transition-opacity hover:opacity-90" 
                               onClick={() => setSelectedImage(getImageUrl(msg.fileUrl))}
                             />
                           </div>
                         )}
 
                         <div className="flex flex-col">
-                          <p className="text-[14px] leading-relaxed font-medium whitespace-pre-wrap">{msg.text}</p>
-                          <div className={`flex items-center justify-end gap-1.5 mt-2 ${isMe ? 'text-blue-100' : 'text-slate-400'}`}>
+                          {isDeleted ? (
+                            <p className="text-[14px] font-medium italic leading-relaxed">تم حذف هذه الرسالة.</p>
+                          ) : (
+                            <p className="whitespace-pre-wrap text-[14px] font-medium leading-relaxed">{msg.text}</p>
+                          )}
+                          <div className={`mt-2 flex flex-wrap items-center justify-end gap-x-2 gap-y-0.5 ${isDeleted ? 'text-slate-500' : isMe ? 'text-blue-100' : 'text-slate-400'}`}>
+                            {!isDeleted && msg.editedAt && (
+                              <span className="text-[9px] font-bold opacity-90">تم التعديل</span>
+                            )}
                             <span className="text-[9px] font-bold">
                               {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            {isMe && (
-                              isSeen ? <CheckCheck size={14} className="text-white" /> : <Check size={14} />
+                            {isMe && !isDeleted && (
+                              isSeen ? <CheckCheck size={14} className={isMe ? 'text-white' : ''} /> : <Check size={14} />
                             )}
                           </div>
                         </div>
@@ -708,6 +913,125 @@ const Messages = () => {
           </div>
         )}
       </div>
+
+      {createPortal(
+        <AnimatePresence>
+          {messageSheet && (
+            <motion.div
+              key="msg-sheet"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] flex flex-col justify-end bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))]"
+              role="dialog"
+              aria-modal="true"
+              aria-label="خيارات الرسالة"
+              onClick={() => setMessageSheet(null)}
+            >
+              <motion.div
+                initial={{ y: 28, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 28, opacity: 0 }}
+                transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+                className="mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="border-b border-slate-100 px-4 py-3 text-center">
+                  <p className="text-sm font-bold text-slate-800">خيارات الرسالة</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-slate-500">للمحادثة مع {activeOther?.name}</p>
+                </div>
+                {messageSheet.messageType !== 'file' && (
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 px-4 py-3.5 text-right text-slate-800 transition-colors hover:bg-slate-50"
+                    onClick={handleOpenEditFromSheet}
+                  >
+                    <Pencil size={20} className="shrink-0 text-blue-600" />
+                    <span className="flex-1 text-sm font-bold">تعديل النص</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={deletingId === messageSheet._id}
+                  className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3.5 text-right text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                  onClick={handleConfirmDeleteMessage}
+                >
+                  <Trash2 size={20} className="shrink-0" />
+                  <span className="flex-1 text-sm font-bold">
+                    {deletingId === messageSheet._id ? 'جاري الحذف...' : 'حذف للجميع'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="w-full border-t border-slate-100 py-3 text-center text-sm font-bold text-slate-500 hover:bg-slate-50"
+                  onClick={() => setMessageSheet(null)}
+                >
+                  إلغاء
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
+      {createPortal(
+        <AnimatePresence>
+          {editModal && (
+            <motion.div
+              key="edit-modal"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[210] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
+              role="dialog"
+              aria-modal="true"
+              aria-label="تعديل الرسالة"
+              onClick={() => !savingEdit && setEditModal(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.96, opacity: 0, y: 12 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.96, opacity: 0, y: 12 }}
+                className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="border-b border-slate-100 px-4 py-3">
+                  <h2 className="text-base font-bold text-slate-800">تعديل الرسالة</h2>
+                </div>
+                <div className="p-4">
+                  <textarea
+                    rows={4}
+                    className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm font-medium text-slate-800 outline-none focus:border-blue-400 focus:bg-white"
+                    value={editModal.text}
+                    onChange={(e) => setEditModal((m) => (m ? { ...m, text: e.target.value } : m))}
+                    disabled={savingEdit}
+                  />
+                </div>
+                <div className="flex gap-2 border-t border-slate-100 p-3">
+                  <button
+                    type="button"
+                    className="flex-1 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                    disabled={savingEdit}
+                    onClick={() => setEditModal(null)}
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 rounded-xl bg-blue-600 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60"
+                    disabled={savingEdit}
+                    onClick={handleSaveEditedMessage}
+                  >
+                    {savingEdit ? 'جاري الحفظ...' : 'حفظ'}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
  
       {/* ── Image Lightbox Modal ────────────────────────────────────────────── */}
       <AnimatePresence>

@@ -11,9 +11,15 @@ const MainLayout = () => {
     location.pathname.includes('/messages') || location.pathname.startsWith('/chat/');
 
   return (
-    <div className="min-h-screen bg-white selection:bg-blue-100 selection:text-blue-900 flex flex-col">
+    <div
+      className={`flex flex-col bg-white selection:bg-blue-100 selection:text-blue-900 ${
+        isChatPage ? 'h-svh max-h-svh overflow-hidden' : 'min-h-screen'
+      }`}
+    >
       <Navbar />
-      <main className="flex min-h-0 flex-1 flex-col">
+      <main
+        className={`flex min-h-0 flex-1 flex-col ${isChatPage ? 'min-h-0 overflow-hidden' : ''}`}
+      >
         <Outlet />
       </main>
       {!isChatPage && <Footer />}

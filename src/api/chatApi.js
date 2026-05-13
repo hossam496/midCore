@@ -29,3 +29,9 @@ export const uploadChatFile = (formData) => {
     }
   });
 };
+
+export const updateMessageApi = (conversationId, messageId, text) =>
+  api.patch(`/conversations/${conversationId}/messages/${messageId}`, { text });
+
+export const deleteMessageApi = (conversationId, messageId) =>
+  api.delete(`/conversations/${conversationId}/messages/${messageId}`);
