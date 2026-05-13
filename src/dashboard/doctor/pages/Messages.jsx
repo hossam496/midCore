@@ -824,26 +824,26 @@ const Messages = () => {
                   const bubbleClass = isDeleted
                     ? 'rounded-3xl border border-slate-200 bg-slate-200/90 text-slate-600'
                     : isMe
-                      ? 'select-none rounded-3xl rounded-tr-none bg-blue-600 text-white'
-                      : 'rounded-3xl rounded-tl-none border border-slate-100 bg-white text-slate-800';
+                      ? 'select-none rounded-3xl rounded-tl-none bg-blue-600 text-white'
+                      : 'rounded-3xl rounded-tr-none border border-slate-100 bg-white text-slate-800';
 
                   return (
                     <motion.div 
                       key={msg._id || msg._clientId || idx}
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      className={`flex ${isMe ? 'justify-start flex-row-reverse' : 'justify-start'} ${isSameSender ? 'mt-1' : 'mt-6'}`}
+                      className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isSameSender ? 'mt-1' : 'mt-6'}`}
                     >
-                       {!isSameSender && (
-                          <div className={`w-8 h-8 rounded-xl shrink-0 mt-auto ${isMe ? 'mr-2' : 'ml-2'} overflow-hidden border border-white shadow-sm bg-slate-100`}>
+                       {!isMe && !isSameSender && (
+                          <div className="w-8 h-8 rounded-xl shrink-0 mt-auto ml-2 overflow-hidden border border-white shadow-sm bg-slate-100">
                              <img 
-                                src={isMe ? getImageUrl(user.profileImage) : getImageUrl(activeOther?.profileImage)} 
+                                src={getImageUrl(activeOther?.profileImage)} 
                                 className="h-full w-full object-cover"
                                 alt=""
                              />
                           </div>
                        )}
-                       {isSameSender && <div className="ml-2 h-8 w-8 shrink-0" />}
+                       {!isMe && isSameSender && <div className="ml-2 h-8 w-8 shrink-0" />}
 
                       <div 
                         {...buildMessageInteractionProps(msg)}
@@ -900,6 +900,17 @@ const Messages = () => {
                           </div>
                         </div>
                       </div>
+                      
+                       {isMe && !isSameSender && (
+                          <div className="w-8 h-8 rounded-xl shrink-0 mt-auto mr-2 overflow-hidden border border-white shadow-sm bg-slate-100">
+                             <img 
+                                src={getImageUrl(user.profileImage)} 
+                                className="h-full w-full object-cover"
+                                alt=""
+                             />
+                          </div>
+                       )}
+                       {isMe && isSameSender && <div className="mr-2 h-8 w-8 shrink-0" />}
                     </motion.div>
                   );
                 })
