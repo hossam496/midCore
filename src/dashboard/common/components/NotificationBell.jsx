@@ -145,7 +145,7 @@ const NotificationBell = () => {
               className="fixed z-[85] flex max-h-[min(88dvh,28rem)] w-[min(calc(100vw-1.5rem),24rem)] flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl
                 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
                 max-lg:inset-x-0 max-lg:bottom-0 max-lg:top-auto max-lg:max-h-[85dvh] max-lg:w-full max-lg:translate-x-0 max-lg:translate-y-0 max-lg:rounded-b-none max-lg:rounded-t-3xl max-lg:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]
-                lg:absolute lg:inset-auto lg:left-0 lg:right-auto lg:top-full lg:mt-2 lg:max-h-[min(24rem,calc(100vh-6rem))] lg:w-[min(22rem,calc(100vw-2rem))] lg:translate-x-0 lg:translate-y-0"
+                lg:absolute lg:inset-auto lg:left-auto lg:right-0 lg:top-full lg:mt-2 lg:max-h-[min(24rem,calc(100vh-6rem))] lg:w-[min(22rem,calc(100vw-2rem))] lg:translate-x-0 lg:translate-y-0"
             >
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-4 py-3 sm:px-5 sm:py-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2">

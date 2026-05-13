@@ -9,7 +9,7 @@ const Header = ({ onOpenMobileSidebar, desktopCollapsed, onToggleDesktopSidebar 
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-slate-100/80 bg-white/95 px-3 backdrop-blur-md sm:h-20 sm:gap-4 sm:px-4 lg:px-8">
+    <header className="sticky top-0 z-[55] flex h-16 shrink-0 items-center justify-between gap-2 overflow-visible border-b border-slate-100/80 bg-white/95 px-3 backdrop-blur-md sm:h-20 sm:gap-4 sm:px-4 lg:px-8">
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
         <button
           type="button"
