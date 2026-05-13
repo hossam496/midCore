@@ -2,8 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Check, MessageSquare, Calendar, BellRing, X } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { usePushMessaging } from '../context/PushMessagingContext';
-import { formatDistanceToNow } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { formatNotifRelative } from '../utils/notificationDate';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
@@ -209,7 +208,7 @@ const NotificationDropdown = () => {
                         {notif.message}
                       </p>
                       <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
-                        {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true, locale: ar })}
+                        {formatNotifRelative(notif)}
                       </p>
                     </div>
                     {!notif.isRead && (

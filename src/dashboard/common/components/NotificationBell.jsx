@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Bell, X, CheckCheck, MessageCircle, Calendar, Info, BellOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatNotifRelative } from '../../../utils/notificationDate';
 import { useNotifications } from '../../../context/NotificationContext';
 import { usePushMessaging } from '../../../context/PushMessagingContext';
 
@@ -22,16 +23,6 @@ const NotifIcon = ({ type }) => {
     </div>
   );
 };
-
-function timeAgo(isoString) {
-  const diff = Date.now() - new Date(isoString).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'الآن';
-  if (mins < 60) return `منذ ${mins} دقيقة`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `منذ ${hrs} ساعة`;
-  return `منذ ${Math.floor(hrs / 24)} يوم`;
-}
 
 const LG_MIN = '(min-width: 1024px)';
 
@@ -134,7 +125,6 @@ const NotificationBell = () => {
   const notifKey = (n, i) => n._id || n.id || `n-${i}`;
   const notifTitle = (n) => n.title || '';
   const notifBody = (n) => n.message || n.body || '';
-  const notifTime = (n) => n.createdAt || n.date;
 
   const panelInner = (
     <>
@@ -217,9 +207,7 @@ const NotificationBell = () => {
                   >
                     {notifTitle(notif)}
                   </p>
-                  {notifTime && (
-                    <span className="shrink-0 text-[10px] text-slate-400">{timeAgo(notifTime)}</span>
-                  )}
+                  <span className="shrink-0 text-[10px] text-slate-400">{formatNotifRelative(notif)}</span>
                 </div>
                 <p className="mt-0.5 line-clamp-2 text-right text-[11px] leading-relaxed text-slate-500">
                   {notifBody(notif)}
