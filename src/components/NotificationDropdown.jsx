@@ -123,7 +123,7 @@ const NotificationDropdown = () => {
                 }
                 className="fixed z-[101] flex max-h-[min(88dvh,32rem)] w-full flex-col overflow-hidden rounded-t-[1.75rem] bg-white shadow-[0_-8px_40px_rgba(0,0,0,0.12)] ring-1 ring-black/5
                   inset-x-0 bottom-0 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]
-                  md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:max-h-[min(24rem,calc(100vh-6rem))] md:w-[min(20rem,calc(100vw-2rem))] md:rounded-3xl md:pb-0 md:shadow-2xl"
+                  md:absolute md:left-auto md:right-auto md:left-0 md:top-full md:bottom-auto md:mt-2 md:max-h-[min(24rem,calc(100vh-6rem))] md:w-[min(20rem,calc(100vw-2rem))] md:rounded-3xl md:pb-0 md:shadow-2xl"
               >
                 {/* Header */}
                 <div className="flex shrink-0 flex-col gap-2 border-b border-gray-100 bg-gray-50/80 p-3 sm:p-4">
