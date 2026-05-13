@@ -20,6 +20,25 @@ const axiosInstance = axios.create({
   timeout: 20000,
 });
 
+// FormData must not use application/json or a hand-written multipart type (missing boundary).
+axiosInstance.interceptors.request.use((config) => {
+  if (config.data instanceof FormData && config.headers) {
+    const h = config.headers;
+    if (typeof h.delete === 'function') {
+      h.delete('Content-Type');
+    } else if (typeof h.set === 'function') {
+      try {
+        h.set('Content-Type', undefined);
+      } catch {
+        delete h['Content-Type'];
+      }
+    } else {
+      delete h['Content-Type'];
+    }
+  }
+  return config;
+});
+
 // Response Interceptor for global error handling and retries
 axiosInstance.interceptors.response.use(
   (response) => response,

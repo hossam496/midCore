@@ -21,14 +21,13 @@ export const sendMessageApi = (conversationId, messageData) => {
 // Get total unread count
 export const getUnreadCount = () => api.get('/conversations/unread-count');
 
-// Upload a file for chat
-export const uploadChatFile = (formData) => {
-  return api.post('/media/chat', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+// Upload a file for chat (Content-Type + boundary set by the browser — see axios request interceptor)
+export const uploadChatFile = (formData) =>
+  api.post('/media/chat', formData, {
+    timeout: 120000,
+    maxBodyLength: Infinity,
+    maxContentLength: Infinity,
   });
-};
 
 export const updateMessageApi = (conversationId, messageId, text) =>
   api.patch(`/conversations/${conversationId}/messages/${messageId}`, { text });
