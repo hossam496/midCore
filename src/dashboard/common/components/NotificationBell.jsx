@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, X, CheckCheck, MessageCircle, Calendar, Info, BellOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,11 +33,17 @@ function timeAgo(isoString) {
   return `منذ ${Math.floor(hrs / 24)} يوم`;
 }
 
+const LG_MIN = '(min-width: 1024px)';
+
 const NotificationBell = () => {
   const navigate = useNavigate();
   const bellRef = useRef(null);
   const panelRef = useRef(null);
   const [open, setOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(LG_MIN).matches
+  );
+  const [deskCoords, setDeskCoords] = useState({ top: 0, right: 8, width: 352 });
 
   const { notifications, unreadNotifCount, markRead, markAllRead } = useNotifications();
   const push = usePushMessaging();
@@ -50,6 +57,40 @@ const NotificationBell = () => {
 
   const close = useCallback(() => setOpen(false), []);
   const toggle = useCallback(() => setOpen((v) => !v), []);
+
+  useEffect(() => {
+    const mq = window.matchMedia(LG_MIN);
+    const fn = () => setIsDesktop(mq.matches);
+    fn();
+    mq.addEventListener('change', fn);
+    return () => mq.removeEventListener('change', fn);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open || !isDesktop) return undefined;
+
+    const update = () => {
+      const el = bellRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const w = Math.min(22 * 16, Math.max(280, window.innerWidth - 16));
+      setDeskCoords({
+        top: r.bottom + 8,
+        right: Math.max(8, window.innerWidth - r.right),
+        width: w,
+      });
+    };
+
+    update();
+    const id = requestAnimationFrame(update);
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [open, isDesktop]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -95,6 +136,111 @@ const NotificationBell = () => {
   const notifBody = (n) => n.message || n.body || '';
   const notifTime = (n) => n.createdAt || n.date;
 
+  const panelInner = (
+    <>
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-4 py-3 sm:px-5 sm:py-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex justify-center lg:hidden" aria-hidden>
+            <span className="h-1 w-10 shrink-0 rounded-full bg-slate-300" />
+          </div>
+          <Bell size={16} className="hidden shrink-0 text-blue-600 sm:block" />
+          <span id="dash-notif-title" className="truncate text-sm font-bold text-slate-800">
+            الإشعارات
+          </span>
+          {unreadNotifCount > 0 && (
+            <span className="shrink-0 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-black text-white">
+              {unreadNotifCount} جديد
+            </span>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          {notifications.length > 0 && (
+            <button
+              type="button"
+              onClick={() => markAllRead()}
+              title="تعليم الكل كمقروء"
+              className="touch-manipulation rounded-lg p-2 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+            >
+              <CheckCheck size={16} />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={close}
+            className="touch-manipulation rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            aria-label="إغلاق"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      {pushBanner === 'denied' && (
+        <div className="flex items-center gap-3 border-b border-amber-100 bg-amber-50 px-4 py-3 sm:px-5">
+          <BellOff size={14} className="shrink-0 text-amber-500" />
+          <p className="text-[11px] leading-tight text-amber-800">
+            الإشعارات معطّلة — لن تصلك تنبيهات عند إغلاق التطبيق.
+          </p>
+        </div>
+      )}
+      {pushBanner === 'subscribed' && (
+        <div className="flex items-center gap-3 border-b border-emerald-100 bg-emerald-50 px-4 py-3 sm:px-5">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+          <p className="text-[11px] leading-tight text-emerald-800">إشعارات الدفع مفعّلة.</p>
+        </div>
+      )}
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
+        {notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+            <Bell size={36} className="mb-3 opacity-20" />
+            <p className="text-sm font-medium">لا توجد إشعارات</p>
+            <p className="mt-1 text-xs opacity-60">ستظهر إشعاراتك هنا</p>
+          </div>
+        ) : (
+          notifications.map((notif, idx) => (
+            <button
+              key={notifKey(notif, idx)}
+              type="button"
+              onClick={() => handleNotifClick(notif)}
+              className={`flex w-full items-start gap-3 border-b border-slate-50 px-4 py-3.5 text-right transition-colors last:border-0 hover:bg-slate-50 sm:px-5 touch-manipulation ${
+                !notif.isRead && !notif.read ? 'bg-blue-50/50' : ''
+              }`}
+            >
+              <NotifIcon type={notif.type} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p
+                    className={`truncate text-xs font-bold ${
+                      !notif.isRead && !notif.read ? 'text-slate-800' : 'text-slate-600'
+                    }`}
+                  >
+                    {notifTitle(notif)}
+                  </p>
+                  {notifTime && (
+                    <span className="shrink-0 text-[10px] text-slate-400">{timeAgo(notifTime)}</span>
+                  )}
+                </div>
+                <p className="mt-0.5 line-clamp-2 text-right text-[11px] leading-relaxed text-slate-500">
+                  {notifBody(notif)}
+                </p>
+              </div>
+              {!notif.isRead && !notif.read && (
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+              )}
+            </button>
+          ))
+        )}
+      </div>
+
+      {notifications.length > 0 && (
+        <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-2.5 text-center sm:px-5">
+          <p className="text-[10px] text-slate-400">{notifications.length} إشعار</p>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="relative inline-flex shrink-0 items-center">
       <div ref={bellRef}>
@@ -132,122 +278,49 @@ const NotificationBell = () => {
               onClick={close}
             />
 
-            <motion.div
-              key="nb-panel"
-              ref={panelRef}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="dash-notif-title"
-              initial={{ opacity: 0, y: 24, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.98 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="fixed z-[85] flex max-h-[min(88dvh,28rem)] w-[min(calc(100vw-1.5rem),24rem)] flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl
-                left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                max-lg:inset-x-0 max-lg:bottom-0 max-lg:top-auto max-lg:max-h-[85dvh] max-lg:w-full max-lg:translate-x-0 max-lg:translate-y-0 max-lg:rounded-b-none max-lg:rounded-t-3xl max-lg:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]
-                lg:absolute lg:inset-auto lg:left-auto lg:right-0 lg:top-full lg:mt-2 lg:max-h-[min(24rem,calc(100vh-6rem))] lg:w-[min(22rem,calc(100vw-2rem))] lg:translate-x-0 lg:translate-y-0"
-            >
-              <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-4 py-3 sm:px-5 sm:py-4">
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <div className="flex justify-center lg:hidden" aria-hidden>
-                    <span className="h-1 w-10 rounded-full bg-slate-300" />
-                  </div>
-                  <Bell size={16} className="hidden shrink-0 text-blue-600 sm:block" />
-                  <span id="dash-notif-title" className="truncate text-sm font-bold text-slate-800">
-                    الإشعارات
-                  </span>
-                  {unreadNotifCount > 0 && (
-                    <span className="shrink-0 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-black text-white">
-                      {unreadNotifCount} جديد
-                    </span>
-                  )}
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  {notifications.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => markAllRead()}
-                      title="تعليم الكل كمقروء"
-                      className="touch-manipulation rounded-lg p-2 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                    >
-                      <CheckCheck size={16} />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={close}
-                    className="touch-manipulation rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                    aria-label="إغلاق"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              </div>
+            {!isDesktop && (
+              <motion.div
+                key="nb-panel-mobile"
+                ref={panelRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="dash-notif-title"
+                initial={{ opacity: 0, y: '100%' }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: '100%' }}
+                transition={{ type: 'spring', damping: 32, stiffness: 380 }}
+                className="fixed inset-x-0 bottom-0 z-[85] flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-slate-100 bg-white pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] shadow-2xl lg:hidden"
+              >
+                {panelInner}
+              </motion.div>
+            )}
 
-              {pushBanner === 'denied' && (
-                <div className="flex items-center gap-3 border-b border-amber-100 bg-amber-50 px-4 py-3 sm:px-5">
-                  <BellOff size={14} className="shrink-0 text-amber-500" />
-                  <p className="text-[11px] leading-tight text-amber-800">
-                    الإشعارات معطّلة — لن تصلك تنبيهات عند إغلاق التطبيق.
-                  </p>
-                </div>
+            {isDesktop &&
+              createPortal(
+                <motion.div
+                  key="nb-panel-desktop"
+                  ref={panelRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="dash-notif-title"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                  style={{
+                    position: 'fixed',
+                    top: deskCoords.top,
+                    right: deskCoords.right,
+                    width: deskCoords.width,
+                    zIndex: 10000,
+                    maxHeight: 'min(24rem, calc(100vh - 6rem))',
+                  }}
+                  className="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-2xl"
+                >
+                  {panelInner}
+                </motion.div>,
+                document.body
               )}
-              {pushBanner === 'subscribed' && (
-                <div className="flex items-center gap-3 border-b border-emerald-100 bg-emerald-50 px-4 py-3 sm:px-5">
-                  <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
-                  <p className="text-[11px] leading-tight text-emerald-800">إشعارات الدفع مفعّلة.</p>
-                </div>
-              )}
-
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]">
-                {notifications.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                    <Bell size={36} className="mb-3 opacity-20" />
-                    <p className="text-sm font-medium">لا توجد إشعارات</p>
-                    <p className="mt-1 text-xs opacity-60">ستظهر إشعاراتك هنا</p>
-                  </div>
-                ) : (
-                  notifications.map((notif, idx) => (
-                    <button
-                      key={notifKey(notif, idx)}
-                      type="button"
-                      onClick={() => handleNotifClick(notif)}
-                      className={`flex w-full items-start gap-3 border-b border-slate-50 px-4 py-3.5 text-right transition-colors last:border-0 hover:bg-slate-50 sm:px-5 touch-manipulation ${
-                        !notif.isRead && !notif.read ? 'bg-blue-50/50' : ''
-                      }`}
-                    >
-                      <NotifIcon type={notif.type} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p
-                            className={`truncate text-xs font-bold ${
-                              !notif.isRead && !notif.read ? 'text-slate-800' : 'text-slate-600'
-                            }`}
-                          >
-                            {notifTitle(notif)}
-                          </p>
-                          {notifTime && (
-                            <span className="shrink-0 text-[10px] text-slate-400">{timeAgo(notifTime)}</span>
-                          )}
-                        </div>
-                        <p className="mt-0.5 line-clamp-2 text-right text-[11px] leading-relaxed text-slate-500">
-                          {notifBody(notif)}
-                        </p>
-                      </div>
-                      {!notif.isRead && !notif.read && (
-                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
-                      )}
-                    </button>
-                  ))
-                )}
-              </div>
-
-              {notifications.length > 0 && (
-                <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-2.5 text-center sm:px-5">
-                  <p className="text-[10px] text-slate-400">{notifications.length} إشعار</p>
-                </div>
-              )}
-            </motion.div>
           </>
         )}
       </AnimatePresence>
