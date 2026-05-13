@@ -10,6 +10,7 @@ const DEFAULT_STATE = {
   time: null,
   startTime: null,
   endTime: null,
+  appointmentNumber: null,
   patientDetails: {
     fullName: '',
     email: '',

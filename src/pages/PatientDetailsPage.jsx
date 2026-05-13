@@ -33,7 +33,7 @@ const DEFAULT_PATIENT = {
 
 const PatientDetailsPage = () => {
   const navigate = useNavigate();
-  const { bookingData, updatePatientDetails, clearBooking } = useBooking();
+  const { bookingData, updatePatientDetails, updateBooking } = useBooking();
   const formRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -105,9 +105,13 @@ const PatientDetailsPage = () => {
 
       const res = await createAppointment(appointmentPayload);
       if (res.data.success) {
-        // We might want to keep the appointment ID in context for Step 4
-        navigate('/booking-confirmation');
-        // We don't clear context yet so confirmation page can show data
+        const n = res.data.appointment?.appointmentNumber;
+        if (n != null) {
+          updateBooking({ appointmentNumber: n });
+        }
+        navigate('/booking-confirmation', {
+          state: { appointmentNumber: n },
+        });
       }
     } catch (err) {
       console.error('Booking error:', err);

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 
 import { 
   Check, Calendar, Clock, MapPin, Download, 
@@ -44,17 +44,14 @@ const BookingConfirmationPage = () => {
   }, []);
 
   const navigate = useNavigate();
-  const { bookingData, clearBooking } = useBooking();
+  const location = useLocation();
+  const { bookingData } = useBooking();
   const { user } = useAuth();
   const receiptRef = useRef(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // ✅ FIX: Stable ID generated ONCE via useState lazy initializer.
-  // Using Math.random() directly in the render body re-generates on every
-  // render and in React StrictMode (which double-invokes renders in dev).
-  const [appointmentId] = useState(
-    () => 'MC-' + Math.random().toString(36).substr(2, 9).toUpperCase()
-  );
+  const queueNumber =
+    bookingData?.appointmentNumber ?? location.state?.appointmentNumber;
 
   // حماية البيانات لتجنب أي undefined
   const doctor = bookingData?.doctor || { user: { name: 'طبيب ميدكور' } };
@@ -129,7 +126,7 @@ const BookingConfirmationPage = () => {
 
       const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = `MedCore-Receipt-${appointmentId}.png`;
+      link.download = `MedCore-Queue-${queueNumber ?? 'receipt'}.png`;
       link.href = url;
       document.body.appendChild(link);
       link.click();
@@ -167,7 +164,12 @@ const BookingConfirmationPage = () => {
   return (
     <div className="min-h-screen bg-white pt-32 px-10 text-center">
       <h1 className="text-4xl font-bold text-blue-600 mb-6">تم تأكيد الحجز!</h1>
-      <p className="text-xl text-gray-600 mb-10">رقم الموعد الخاص بك هو: <span className="font-bold text-gray-900">{appointmentId}</span></p>
+      <p className="text-xl text-gray-600 mb-10">
+        رقم دورك في العيادة هو:{' '}
+        <span className="font-bold text-gray-900">
+          {queueNumber != null ? `#${queueNumber}` : '—'}
+        </span>
+      </p>
       
       <div className="max-w-md mx-auto bg-gray-50 rounded-3xl p-8 mb-10 border border-gray-100">
         <p className="font-bold text-gray-900 mb-2">الطبيب: {doctorName}</p>
