@@ -8,7 +8,7 @@
  *  4. Sending subscription to backend
  *  5. Unsubscribing on logout
  */
-import api from './axios';
+import api from '../api/axios';
 import { isFirebaseConfigured, registerDeviceForFcm } from '../firebase/firebaseConfig';
 /**
  * Convert a base64 VAPID public key to a Uint8Array
