@@ -856,6 +856,7 @@ const Messages = () => {
                               alt="" 
                               className={`h-auto max-w-full object-cover transition-opacity ${isPending ? 'opacity-90' : 'cursor-pointer hover:opacity-90'}`}
                               onClick={() => !isPending && setSelectedImage(getImageUrl(msg.fileUrl))}
+                              onLoad={() => scrollToBottom('auto')}
                             />
                             {isPending && (
                               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900/35 backdrop-blur-[1px]">
