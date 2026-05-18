@@ -21,6 +21,8 @@ const Layout = ({ children, menuItems, roleName }) => {
     }
   }, [desktopCollapsed]);
 
+  const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
+
   const location = useLocation();
   const isChatPage = location.pathname.includes('/messages') || location.pathname.includes('/chat/');
 
