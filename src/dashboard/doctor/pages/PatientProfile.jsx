@@ -60,24 +60,24 @@ const PatientProfile = () => {
         }
     };
 
-    if (loading) return <div className="p-8 text-center font-bold text-slate-500">Loading Patient Profile...</div>;
-    if (!patient) return <div className="p-8 text-center font-bold text-rose-500">Patient not found.</div>;
+    if (loading) return <div className="p-8 text-center font-bold text-slate-500" dir="rtl">جاري تحميل ملف المريض...</div>;
+    if (!patient) return <div className="p-8 text-center font-bold text-rose-500" dir="rtl">المريض غير موجود.</div>;
 
     const online = false;
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500 pb-10">
+        <div className="space-y-8 animate-in fade-in duration-500 pb-10" dir="rtl">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <button
                     onClick={() => navigate(-1)}
                     className="p-2.5 bg-white border border-slate-100 rounded-xl text-slate-500 hover:text-blue-600 hover:border-blue-100 transition-all shadow-sm"
                 >
-                    <ChevronLeft size={20} />
+                    <ChevronLeft size={20} className="rotate-180" />
                 </button>
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Patient Profile</h1>
-                    <p className="text-sm text-slate-500 font-medium">Viewing detailed medical overview for {patient.name}.</p>
+                    <h1 className="text-2xl font-bold text-slate-800">ملف المريض</h1>
+                    <p className="text-sm text-slate-500 font-medium">عرض نظرة عامة طبية مفصلة لـ {patient.name}.</p>
                 </div>
             </div>
 
@@ -98,26 +98,30 @@ const PatientProfile = () => {
                         </div>
 
                         <h2 className="text-xl font-bold text-slate-800">{patient.name}</h2>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Patient ID: #MC-{patient._id.substring(0, 6).toUpperCase()}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">رقم المريض: #MC-{patient._id.substring(0, 6).toUpperCase()}</p>
 
                         <div className={`mt-3 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${online ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
-                            {online ? 'Online Now' : 'Offline'}
+                            {online ? 'متصل الآن' : 'غير متصل'}
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4 w-full mt-8 pt-8 border-t border-slate-50">
+                        <div className="grid grid-cols-4 gap-4 w-full mt-8 pt-8 border-t border-slate-50">
                             <div>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Age</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">العمر</p>
                                 <p className="text-sm font-bold text-slate-800 mt-1">
-                                    {patient.dob ? new Date().getFullYear() - new Date(patient.dob).getFullYear() : 'N/A'}
+                                    {patient.dob ? new Date().getFullYear() - new Date(patient.dob).getFullYear() : 'غير متوفر'}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Blood</p>
-                                <p className="text-sm font-bold text-slate-800 mt-1">A+</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">الدم</p>
+                                <p className="text-sm font-bold text-slate-800 mt-1" dir="ltr">{patient.bloodType || '-'}</p>
                             </div>
                             <div>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Height</p>
-                                <p className="text-sm font-bold text-slate-800 mt-1">178 cm</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">الطول</p>
+                                <p className="text-sm font-bold text-slate-800 mt-1">{patient.height ? `${patient.height} سم` : '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">الوزن</p>
+                                <p className="text-sm font-bold text-slate-800 mt-1">{patient.weight ? `${patient.weight} كجم` : '-'}</p>
                             </div>
                         </div>
 
@@ -126,20 +130,20 @@ const PatientProfile = () => {
                             className="w-full mt-8 py-4 bg-linear-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                         >
                             <MessageSquare size={20} />
-                            Chat with Patient
+                            محادثة مع المريض
                         </button>
                     </div>
 
                     {/* Contact Details */}
                     <div className="profile-card bg-white rounded-3xl border border-slate-100 shadow-sm p-6 space-y-4">
-                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Contact Information</h3>
+                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">معلومات الاتصال</h3>
                         <div className="flex items-center gap-4 text-slate-600">
                             <div className="p-2.5 bg-slate-50 rounded-xl text-slate-400">
                                 <Phone size={18} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">Phone</p>
-                                <p className="text-sm font-bold text-slate-700">{patient.phone || 'Not provided'}</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">الهاتف</p>
+                                <p className="text-sm font-bold text-slate-700" dir="ltr">{patient.phone || 'غير متوفر'}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-4 text-slate-600">
@@ -147,7 +151,7 @@ const PatientProfile = () => {
                                 <Mail size={18} />
                             </div>
                             <div className="min-w-0">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase">Email</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase">البريد الإلكتروني</p>
                                 <p className="text-sm font-bold text-slate-700 truncate">{patient.email}</p>
                             </div>
                         </div>
@@ -163,7 +167,7 @@ const PatientProfile = () => {
                                 <Droplet size={24} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hemoglobin</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">الهيموجلوبين</p>
                                 <h4 className="text-xl font-bold text-slate-800">14.2 g/dL</h4>
                             </div>
                         </div>
@@ -172,7 +176,7 @@ const PatientProfile = () => {
                                 <Activity size={24} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Heart Rate</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">معدل ضربات القلب</p>
                                 <h4 className="text-xl font-bold text-slate-800">72 bpm</h4>
                             </div>
                         </div>
@@ -181,7 +185,7 @@ const PatientProfile = () => {
                                 <Calendar size={24} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Next Checkup</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">الفحص القادم</p>
                                 <h4 className="text-xl font-bold text-slate-800">May 12, 2026</h4>
                             </div>
                         </div>
@@ -190,8 +194,8 @@ const PatientProfile = () => {
                     {/* Medical History */}
                     <div className="profile-card bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
                         <div className="flex justify-between items-center mb-8">
-                            <h3 className="text-lg font-bold text-slate-800">Medical History</h3>
-                            <button className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-2 rounded-xl">Add Record</button>
+                            <h3 className="text-lg font-bold text-slate-800">التاريخ الطبي</h3>
+                            <button className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-2 rounded-xl">إضافة سجل</button>
                         </div>
                         <div className="space-y-6">
                             {[
@@ -223,7 +227,7 @@ const PatientProfile = () => {
                     {/* Documents & Files */}
                     <div className="profile-card bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
                         <div className="flex justify-between items-center mb-8">
-                            <h3 className="text-lg font-bold text-slate-800">Shared Documents</h3>
+                            <h3 className="text-lg font-bold text-slate-800">المستندات المشتركة</h3>
                             <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
                                 <FileText size={20} />
                             </button>

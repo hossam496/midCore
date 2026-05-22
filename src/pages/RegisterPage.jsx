@@ -105,6 +105,7 @@ const RegisterPage = () => {
     dob: '',
     bloodType: '',
     weight: '',
+    height: '',
     role: 'user'
   });
 
@@ -178,6 +179,7 @@ const RegisterPage = () => {
         dob: formData.dob,
         bloodType: formData.bloodType,
         weight: formData.weight,
+        height: formData.height,
       });
 
       // Navigate based on role returned from backend
@@ -380,6 +382,26 @@ const RegisterPage = () => {
                     placeholder="e.g. 75"
                     min="0"
                     value={formData.weight}
+                    onChange={handleChange}
+                    className="w-full pr-12 pl-4 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-800 mr-1">الطول (سم)</label>
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors">
+                    <Scale size={20} />
+                  </div>
+                  <input
+                    type="number"
+                    name="height"
+                    placeholder="e.g. 175"
+                    min="0"
+                    value={formData.height}
                     onChange={handleChange}
                     className="w-full pr-12 pl-4 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
                   />
