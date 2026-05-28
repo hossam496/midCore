@@ -30,6 +30,15 @@ import { getUserById, updateUserProfile } from '../../../api/userApi';
 import { getAppointments, createAppointment } from '../../../api/appointmentApi';
 import { getOrCreateConversation } from '../../../api/chatApi';
 import { getMyDoctorProfile } from '../../../api/doctorApi';
+import { 
+  getPrescriptions, 
+  createPrescription, 
+  deletePrescription, 
+  getVitals, 
+  createVitalLog, 
+  getMedicalDocuments, 
+  createMedicalDocument 
+} from '../../../api/ehrApi';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -115,54 +124,28 @@ const PatientProfile = () => {
     'Zyrtec (زيرتيك)'
   ];
 
-  // Local Storage lists for persistence scoped by patient ID
-  const [prescriptions, setPrescriptions] = useState(() => {
-    const saved = localStorage.getItem(`rx_${id}`);
-    return saved ? JSON.parse(saved) : [
-      { id: 'rx-1', name: 'Amoxicillin (أموكسيسيلين) 500mg', dosage: 'كبسولة واحدة', frequency: '3 مرات يومياً (كل 8 ساعات)', duration: '7 أيام', instructions: 'بعد الأكل مباشرة', date: '2026-05-20' },
-      { id: 'rx-2', name: 'Panadol Extra (بنادول إكسترا)', dosage: 'قرصين', frequency: 'عند اللزوم', duration: '5 أيام', instructions: 'عند الصداع أو الحرارة الشديدة', date: '2026-05-22' }
-    ];
-  });
-
-  const [vitalsHistory, setVitalsHistory] = useState(() => {
-    const saved = localStorage.getItem(`vitals_${id}`);
-    return saved ? JSON.parse(saved) : [
-      { id: 'v-1', pulse: 72, bp: '120/80', sugar: 95, temp: 36.8, oxygen: 98, date: '2026-05-28', note: 'المؤشرات طبيعية ومستقرة' },
-      { id: 'v-2', pulse: 75, bp: '122/81', sugar: 102, temp: 36.9, oxygen: 97, date: '2026-05-20', note: 'بعد فحص العيادة الدوري' },
-      { id: 'v-3', pulse: 80, bp: '130/85', sugar: 110, temp: 37.2, oxygen: 96, date: '2026-05-12', note: 'ارتفاع طفيف في ضغط الدم' }
-    ];
-  });
-
-  const [documents, setDocuments] = useState(() => {
-    const saved = localStorage.getItem(`docs_${id}`);
-    return saved ? JSON.parse(saved) : [
-      { id: 'doc-1', name: 'Blood_Report_May.pdf', size: '1.2 MB', time: 'يومين مضت', date: '2026-05-26' },
-      { id: 'doc-2', name: 'X-Ray_Chest_Scan.jpg', size: '4.5 MB', time: 'أسبوع مضى', date: '2026-05-21' },
-      { id: 'doc-3', name: 'Vaccination_Record.pdf', size: '0.8 MB', time: 'أسبوعين مضت', date: '2026-05-14' },
-      { id: 'doc-4', name: 'MRI_Knee_Report.zip', size: '24.1 MB', time: 'شهر مضى', date: '2026-04-28' }
-    ];
-  });
-
-  // Save to Local Storage when changes occur
-  useEffect(() => {
-    localStorage.setItem(`rx_${id}`, JSON.stringify(prescriptions));
-  }, [prescriptions, id]);
-
-  useEffect(() => {
-    localStorage.setItem(`vitals_${id}`, JSON.stringify(vitalsHistory));
-  }, [vitalsHistory, id]);
-
-  useEffect(() => {
-    localStorage.setItem(`docs_${id}`, JSON.stringify(documents));
-  }, [documents, id]);
+  // EHR Database States
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [vitalsHistory, setVitalsHistory] = useState([]);
+  const [documents, setDocuments] = useState([]);
 
   const fetchPatientAndAppointments = useCallback(async () => {
     try {
       setLoading(true);
-      const [patientRes, apptsRes, doctorRes] = await Promise.all([
+      const [
+        patientRes, 
+        apptsRes, 
+        doctorRes,
+        prescriptionsRes,
+        vitalsRes,
+        documentsRes
+      ] = await Promise.all([
         getUserById(id),
         getAppointments(),
-        getMyDoctorProfile().catch(() => null)
+        getMyDoctorProfile().catch(() => null),
+        getPrescriptions(id).catch(() => ({ data: { prescriptions: [] } })),
+        getVitals(id).catch(() => ({ data: { vitals: [] } })),
+        getMedicalDocuments(id).catch(() => ({ data: { documents: [] } }))
       ]);
       
       const patientData = patientRes.data.user;
@@ -177,6 +160,11 @@ const PatientProfile = () => {
       if (doctorRes) {
         setDoctor(doctorRes.data.doctor);
       }
+
+      // Set EHR lists from backend responses
+      setPrescriptions(prescriptionsRes.data.prescriptions || []);
+      setVitalsHistory(vitalsRes.data.vitals || []);
+      setDocuments(documentsRes.data.documents || []);
 
       // Initialize edit vitals form
       setVitalsForm({
@@ -240,7 +228,7 @@ const PatientProfile = () => {
       return { label: 'تحت الوزن الطبيعي (نحافة)', color: 'text-amber-500 bg-amber-50 border-amber-100', bg: 'bg-amber-500', feedback: 'ينصح بزيادة السعرات الحرارية الصحية واستشارة خبير تغذية لتناول وجبات مغذية متوازنة.' };
     }
     if (val < 25) {
-      return { label: 'وزن مثالي وصحي', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bg: 'bg-emerald-500', feedback: 'ممتاز! وزنك مثالي ومتناسق. استمر في الحفاظ على هذا المعدل الرائع بنظام صحي.' };
+      return { label: 'وزن مثالي وصحي', color: 'text-emerald-600 bg-emerald-50 border-emerald-100', bg: 'bg-emerald-500', feedback: 'ممتاز! وزنك مثالي ومتناسق. استمر في الحفاظ على هذا معدل الرائع بنظام صحي.' };
     }
     if (val < 30) {
       return { label: 'زيادة طفيفة في الوزن', color: 'text-orange-500 bg-orange-50 border-orange-100', bg: 'bg-orange-500', feedback: 'ينصح بتقليل النشويات والسكريات وزيادة النشاط الرياضي اليومي لتفادي السمنة.' };
@@ -343,37 +331,43 @@ const PatientProfile = () => {
     }
   };
 
-  // Add prescription to the local list
-  const handleAddPrescription = (e) => {
+  // Add prescription to MERN backend
+  const handleAddPrescription = async (e) => {
     e.preventDefault();
     if (!rxForm.name) {
       toast.error('الرجاء إدخال اسم الدواء');
       return;
     }
 
-    const newRx = {
-      id: `rx-${Date.now()}`,
-      name: rxForm.name,
-      dosage: rxForm.dosage,
-      frequency: rxForm.frequency,
-      duration: rxForm.duration,
-      instructions: rxForm.instructions,
-      date: format(new Date(), 'yyyy-MM-dd')
-    };
+    try {
+      const payload = {
+        patientId: id,
+        name: rxForm.name,
+        dosage: rxForm.dosage,
+        frequency: rxForm.frequency,
+        duration: rxForm.duration,
+        instructions: rxForm.instructions,
+        date: format(new Date(), 'yyyy-MM-dd')
+      };
 
-    setPrescriptions([newRx, ...prescriptions]);
-    toast.success('تمت إضافة الوصفة الطبية بنجاح');
-    setIsPrescriptionModalOpen(false);
-    setRxForm({
-      name: '',
-      dosage: 'كبسولة واحدة',
-      frequency: '3 مرات يومياً (كل 8 ساعات)',
-      duration: '7 أيام',
-      instructions: 'بعد الأكل مباشرة'
-    });
+      const res = await createPrescription(payload);
+      setPrescriptions([res.data.prescription, ...prescriptions]);
+      toast.success('تمت إضافة الوصفة الطبية بنجاح');
+      setIsPrescriptionModalOpen(false);
+      setRxForm({
+        name: '',
+        dosage: 'كبسولة واحدة',
+        frequency: '3 مرات يومياً (كل 8 ساعات)',
+        duration: '7 أيام',
+        instructions: 'بعد الأكل مباشرة'
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error('حدث خطأ أثناء إضافة الوصفة الطبية');
+    }
   };
 
-  // Delete a prescription
+  // Delete a prescription from MERN backend
   const handleDeletePrescription = (rxId) => {
     Swal.fire({
       title: 'هل أنت متأكد؟',
@@ -384,53 +378,71 @@ const PatientProfile = () => {
       cancelButtonColor: '#d33',
       confirmButtonText: 'نعم، احذفها',
       cancelButtonText: 'إلغاء'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setPrescriptions(prev => prev.filter(rx => rx.id !== rxId));
-        toast.success('تم حذف الوصفة الطبية بنجاح');
+        try {
+          await deletePrescription(rxId);
+          setPrescriptions(prev => prev.filter(rx => (rx._id || rx.id) !== rxId));
+          toast.success('تم حذف الوصفة الطبية بنجاح');
+        } catch (err) {
+          console.error(err);
+          toast.error('حدث خطأ أثناء حذف الوصفة الطبية');
+        }
       }
     });
   };
 
-  // Add customized vital logs
-  const handleAddVitalsLog = (e) => {
+  // Add vital logs to MERN backend
+  const handleAddVitalsLog = async (e) => {
     e.preventDefault();
-    const newLog = {
-      id: `v-${Date.now()}`,
-      pulse: parseInt(vitalsLogForm.pulse) || 72,
-      bp: vitalsLogForm.bp || '120/80',
-      sugar: parseInt(vitalsLogForm.sugar) || 95,
-      temp: parseFloat(vitalsLogForm.temp) || 36.8,
-      oxygen: parseInt(vitalsLogForm.oxygen) || 98,
-      date: format(new Date(), 'yyyy-MM-dd'),
-      note: vitalsLogForm.note
-    };
+    try {
+      const payload = {
+        patientId: id,
+        pulse: parseInt(vitalsLogForm.pulse) || 72,
+        bp: vitalsLogForm.bp || '120/80',
+        sugar: parseInt(vitalsLogForm.sugar) || 95,
+        temp: parseFloat(vitalsLogForm.temp) || 36.8,
+        oxygen: parseInt(vitalsLogForm.oxygen) || 98,
+        date: format(new Date(), 'yyyy-MM-dd'),
+        note: vitalsLogForm.note
+      };
 
-    setVitalsHistory([newLog, ...vitalsHistory]);
-    toast.success('تم تسجيل المؤشرات الحيوية بنجاح');
-    setIsNewVitalsLogModalOpen(false);
+      const res = await createVitalLog(payload);
+      setVitalsHistory([res.data.log, ...vitalsHistory]);
+      toast.success('تم تسجيل المؤشرات الحيوية بنجاح');
+      setIsNewVitalsLogModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error('حدث خطأ أثناء تسجيل مؤشرات القياس');
+    }
   };
 
-  // Add simulated document uploader
-  const handleAddDocument = (e) => {
+  // Add medical document to MERN backend
+  const handleAddDocument = async (e) => {
     e.preventDefault();
     if (!docForm.name) {
       toast.error('الرجاء إدخال اسم المستند');
       return;
     }
 
-    const newDoc = {
-      id: `doc-${Date.now()}`,
-      name: docForm.name.endsWith('.pdf') || docForm.name.endsWith('.jpg') ? docForm.name : `${docForm.name}.pdf`,
-      size: docForm.size,
-      time: 'الآن',
-      date: format(new Date(), 'yyyy-MM-dd')
-    };
+    try {
+      const docName = docForm.name.endsWith('.pdf') || docForm.name.endsWith('.jpg') ? docForm.name : `${docForm.name}.pdf`;
+      const payload = {
+        patientId: id,
+        name: docName,
+        size: docForm.size,
+        date: format(new Date(), 'yyyy-MM-dd')
+      };
 
-    setDocuments([newDoc, ...documents]);
-    toast.success('تمت إضافة المستند بنجاح');
-    setIsNewDocModalOpen(false);
-    setDocForm({ name: '', size: '1.5 MB' });
+      const res = await createMedicalDocument(payload);
+      setDocuments([res.data.document, ...documents]);
+      toast.success('تمت إضافة المستند بنجاح');
+      setIsNewDocModalOpen(false);
+      setDocForm({ name: '', size: '1.5 MB' });
+    } catch (err) {
+      console.error(err);
+      toast.error('حدث خطأ أثناء إضافة الملف المرفق');
+    }
   };
 
   // Print single Rx script function
@@ -702,7 +714,7 @@ const PatientProfile = () => {
                   { id: 'history', label: 'السجل والزيارات الطبية', count: appointments.length, icon: ClipboardList },
                   { id: 'prescriptions', label: 'الوصفات الطبية والروشتات', count: prescriptions.length, icon: FileText },
                   { id: 'vitals', label: 'لوحة القياسات والتحاليل', count: vitalsHistory.length, icon: TrendingUp },
-                  { id: 'reports', label: 'التقارير والمستندات', count: documents.length, icon: FolderItemIcon }
+                  { id: 'reports', label: 'التقارير والمستندات', count: documents.length, icon: FileText }
                 ].map((tab) => {
                   const Icon = tab.icon || ClipboardList;
                   const isActive = activeTab === tab.id;
@@ -846,7 +858,7 @@ const PatientProfile = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {prescriptions.map((rx) => (
                           <div 
-                            key={rx.id}
+                            key={rx._id || rx.id}
                             className="bg-slate-50/80 border border-slate-100 p-5 rounded-2xl relative group flex flex-col justify-between hover:bg-white hover:shadow-md hover:border-blue-100 transition-all duration-300"
                           >
                             <div>
@@ -862,7 +874,7 @@ const PatientProfile = () => {
                                 </div>
                                 
                                 <button
-                                  onClick={() => handleDeletePrescription(rx.id)}
+                                  onClick={() => handleDeletePrescription(rx._id || rx.id)}
                                   className="p-1 text-slate-300 hover:text-rose-500 rounded transition-colors"
                                 >
                                   <Trash2 size={13} />
@@ -935,7 +947,7 @@ const PatientProfile = () => {
                           </thead>
                           <tbody className="divide-y divide-slate-100 bg-white">
                             {vitalsHistory.map((log) => (
-                              <tr key={log.id} className="hover:bg-slate-50/70 transition-colors">
+                              <tr key={log._id || log.id} className="hover:bg-slate-50/70 transition-colors">
                                 <td className="p-3.5 font-bold text-slate-800 whitespace-nowrap">{log.date}</td>
                                 <td className="p-3.5 font-bold font-mono">{log.pulse}</td>
                                 <td className="p-3.5 font-bold font-mono">{log.bp}</td>
@@ -973,7 +985,7 @@ const PatientProfile = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {documents.map((doc) => (
                         <div 
-                          key={doc.id} 
+                          key={doc._id || doc.id} 
                           onClick={() => toast.success(`بدء تحميل المستند: ${doc.name}`)}
                           className="p-4 border border-slate-150/70 rounded-2xl flex items-center justify-between group hover:border-blue-150 hover:shadow-md transition-all cursor-pointer bg-slate-50/50 hover:bg-white duration-300"
                         >
@@ -1593,7 +1605,7 @@ const PatientProfile = () => {
                 </tr>
               ) : (
                 prescriptions.map((rx) => (
-                  <tr key={rx.id}>
+                  <tr key={rx._id || rx.id}>
                     <td className="py-4 text-slate-900 font-black text-xs">{rx.name} - {rx.dosage}</td>
                     <td className="py-4 text-slate-700">{rx.frequency}</td>
                     <td className="py-4 text-slate-700">{rx.duration}</td>

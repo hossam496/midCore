@@ -11,12 +11,21 @@ export const registerUser = (data) =>
 export const loginUser = (data) =>
   api.post('/auth/login', data);
 
+/**
+ * Logout — marked skipErrorRetry so the Axios interceptor does NOT attempt
+ * a silent token refresh before calling logout. This prevents a 401→refresh→logout loop.
+ * The backend logout route no longer requires a valid access token.
+ */
 export const logoutUser = () =>
-  api.post('/auth/logout');
+  api.post('/auth/logout', {}, { skipErrorRetry: true });
 
-/** Used on app load — always 200 with user or null (no 401 in DevTools). */
+/**
+ * Session check — called once on app load.
+ * Backend always returns 200 (with user or null), never 401.
+ * skipErrorRetry prevents an unnecessary refresh attempt.
+ */
 export const checkSession = () =>
-  api.get('/auth/session');
+  api.get('/auth/session', { skipErrorRetry: true });
 
 export const getMe = () =>
   api.get('/auth/me');
