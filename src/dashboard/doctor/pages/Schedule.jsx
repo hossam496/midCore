@@ -38,7 +38,7 @@ import {
 import { getMyDoctorProfile, toggleBlockSlot } from '../../../api/doctorApi';
 import { getPatients } from '../../../api/userApi';
 import SmartCalendar from '../../../components/calendar/SmartCalendar';
-import { format, isSameDay, parseISO } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -292,10 +292,10 @@ const Schedule = () => {
   // Status Styles mapping
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed': return 'text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20';
-      case 'confirmed': return 'text-blue-700 bg-blue-50 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20';
-      case 'cancelled': return 'text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20';
-      default: return 'text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20';
+      case 'completed': return 'text-emerald-700 bg-emerald-50 border-emerald-200';
+      case 'confirmed': return 'text-blue-700 bg-blue-50 border-blue-200';
+      case 'cancelled': return 'text-rose-700 bg-rose-50 border-rose-200';
+      default: return 'text-amber-700 bg-amber-50 border-amber-200';
     }
   };
 
@@ -352,24 +352,17 @@ const Schedule = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-12">
       {/* Header Panel */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-gradient-to-tr from-slate-900 via-slate-800 to-blue-950 p-8 rounded-3xl border border-slate-800/80 shadow-2xl relative overflow-hidden">
-        {/* Ambient Glow */}
-        <div className="absolute right-0 top-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute left-1/3 bottom-0 w-80 h-40 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
-        
-        <div className="z-10">
-          <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-[10px] font-bold tracking-widest uppercase">
-            لوحة الإدارة الطبية
-          </span>
-          <h1 className="text-3xl font-extrabold text-white mt-2">إدارة المواعيد والجدول</h1>
-          <p className="text-sm font-semibold text-slate-400 mt-1">عرض وتنظيم مواعيد المرضى والجدول الزمني الطبي بدقة واحترافية</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">إدارة المواعيد والجدول</h1>
+          <p className="text-sm font-semibold text-slate-500 mt-1">عرض وتنظيم مواعيد المرضى والجدول الزمني الطبي بدقة واحترافية</p>
         </div>
 
-        <div className="flex items-center gap-3 z-10">
+        <div className="flex items-center gap-3">
           {/* Glowing Manual Booking Button */}
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="group flex items-center gap-2.5 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-sm font-bold transition-all duration-300 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transform hover:-translate-y-0.5"
+            className="group flex items-center gap-2.5 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all duration-300 shadow-sm shadow-blue-500/10 transform hover:-translate-y-0.5 pointer-events-auto cursor-pointer"
           >
             <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
             <span>حجز يدوي</span>
@@ -377,7 +370,7 @@ const Schedule = () => {
 
           <button 
             onClick={() => window.print()}
-            className="p-3 bg-white/10 dark:bg-white/5 border border-white/10 text-white hover:bg-white/20 rounded-2xl transition-all shadow-sm"
+            className="p-3 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition-all shadow-sm"
           >
             <Printer size={18} />
           </button>
@@ -387,94 +380,98 @@ const Schedule = () => {
       {/* Statistics Section (5 Cards Grid) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {/* Card 1: Today's Appointments */}
-        <div className="relative group bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-md hover:shadow-xl dark:shadow-none hover:border-blue-100 dark:hover:border-blue-900/50 transition-all duration-300">
-          <div className="flex justify-between items-start">
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-2xl">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 group hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase">حجوزات اليوم</p>
+              <h3 className="text-3xl font-extrabold text-slate-800 mt-1 tracking-tight">
+                {totalTodayCount < 10 ? `0${totalTodayCount}` : totalTodayCount}
+              </h3>
+            </div>
+            <div className="p-2.5 bg-blue-50 rounded-xl text-blue-600">
               <CalendarIcon size={20} />
             </div>
-            <span className="text-[9px] font-extrabold tracking-widest text-slate-400 uppercase">حجوزات اليوم</span>
           </div>
-          <div className="mt-5">
-            <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">
-              {totalTodayCount < 10 ? `0${totalTodayCount}` : totalTodayCount}
-            </h3>
-            <p className="text-xs font-semibold text-slate-400 mt-1">إجمالي الحجوزات الطبية لليوم</p>
+          <div className="mt-4">
+            <p className="text-[11px] font-bold text-slate-400">إجمالي الحجوزات الطبية لليوم</p>
           </div>
-          {/* Card Border Glow */}
-          <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-b-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>
 
         {/* Card 2: Pending Confirmation */}
-        <div className="relative group bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-md hover:shadow-xl dark:shadow-none hover:border-amber-100 dark:hover:border-amber-900/50 transition-all duration-300">
-          <div className="flex justify-between items-start">
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-2xl">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 group hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase">طلبات معلقة</p>
+              <h3 className="text-3xl font-extrabold text-slate-800 mt-1 tracking-tight">
+                {pendingCount < 10 ? `0${pendingCount}` : pendingCount}
+              </h3>
+            </div>
+            <div className="p-2.5 bg-amber-50 rounded-xl text-amber-600">
               <Clock size={20} />
             </div>
-            <span className="text-[9px] font-extrabold tracking-widest text-slate-400 uppercase">طلبات معلقة</span>
           </div>
-          <div className="mt-5">
-            <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">
-              {pendingCount < 10 ? `0${pendingCount}` : pendingCount}
-            </h3>
-            <p className="text-xs font-semibold text-slate-400 mt-1">بانتظار الموافقة والتأكيد</p>
+          <div className="mt-4">
+            <p className="text-[11px] font-bold text-slate-400">بانتظار الموافقة والتأكيد</p>
           </div>
-          <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-amber-500 to-orange-500 rounded-b-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>
 
         {/* Card 3: Confirmed Today */}
-        <div className="relative group bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-md hover:shadow-xl dark:shadow-none hover:border-emerald-100 dark:hover:border-emerald-900/50 transition-all duration-300">
-          <div className="flex justify-between items-start">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-2xl">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 group hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase">مؤكدة اليوم</p>
+              <h3 className="text-3xl font-extrabold text-slate-800 mt-1 tracking-tight">
+                {confirmedTodayCount < 10 ? `0${confirmedTodayCount}` : confirmedTodayCount}
+              </h3>
+            </div>
+            <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-600">
               <CheckCircle2 size={20} />
             </div>
-            <span className="text-[9px] font-extrabold tracking-widest text-slate-400 uppercase">مؤكدة اليوم</span>
           </div>
-          <div className="mt-5">
-            <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">
-              {confirmedTodayCount < 10 ? `0${confirmedTodayCount}` : confirmedTodayCount}
-            </h3>
-            <p className="text-xs font-semibold text-slate-400 mt-1">مواعيد مؤكدة قيد التنفيذ</p>
+          <div className="mt-4">
+            <p className="text-[11px] font-bold text-slate-400">مواعيد مؤكدة قيد التنفيذ</p>
           </div>
-          <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-b-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>
 
         {/* Card 4: Revenue Today */}
-        <div className="relative group bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-md hover:shadow-xl dark:shadow-none hover:border-purple-100 dark:hover:border-purple-900/50 transition-all duration-300">
-          <div className="flex justify-between items-start">
-            <div className="p-3 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 rounded-2xl">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 group hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase">دخل اليوم المقدر</p>
+              <h3 className="text-2xl font-extrabold text-slate-800 mt-1 tracking-tight truncate">
+                {todayRevenue.toLocaleString()} <span className="text-xs font-bold text-slate-400">ريال</span>
+              </h3>
+            </div>
+            <div className="p-2.5 bg-purple-50 rounded-xl text-purple-600">
               <DollarSign size={20} />
             </div>
-            <span className="text-[9px] font-extrabold tracking-widest text-slate-400 uppercase">دخل اليوم المقدر</span>
           </div>
-          <div className="mt-5">
-            <h3 className="text-2xl font-extrabold text-slate-800 dark:text-white truncate">
-              {todayRevenue.toLocaleString()} <span className="text-xs font-bold text-slate-400">ريال</span>
-            </h3>
-            <p className="text-xs font-semibold text-slate-400 mt-1">إيرادات الجلسات المؤكدة</p>
+          <div className="mt-4">
+            <p className="text-[11px] font-bold text-slate-400">إيرادات الجلسات المؤكدة</p>
           </div>
-          <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-b-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>
 
         {/* Card 5: Completion Rate */}
-        <div className="relative group bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-md hover:shadow-xl dark:shadow-none hover:border-indigo-100 dark:hover:border-indigo-900/50 transition-all duration-300">
-          <div className="flex justify-between items-start">
-            <div className="p-3 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-2xl">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 group hover:shadow-md transition-all duration-300">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 tracking-[0.1em] uppercase">معدل الإكمال</p>
+              <h3 className="text-3xl font-extrabold text-slate-800 mt-1 tracking-tight">
+                {completionRate}%
+              </h3>
+            </div>
+            <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-600">
               <TrendingUp size={20} />
             </div>
-            <span className="text-[9px] font-extrabold tracking-widest text-slate-400 uppercase">معدل الإكمال</span>
           </div>
-          <div className="mt-5">
-            <h3 className="text-3xl font-extrabold text-slate-800 dark:text-white">
-              {completionRate}%
-            </h3>
-            <p className="text-xs font-semibold text-slate-400 mt-1">نسبة المرضى الذين تم الكشف عليهم</p>
+          <div className="mt-4">
+            <p className="text-[11px] font-bold text-slate-400">نسبة المرضى الذين تم الكشف عليهم</p>
           </div>
-          <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-b-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </div>
       </div>
 
       {/* Filter / Search Bar */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-3xl shadow-sm">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
           {/* Search box */}
           <div className="relative w-full sm:w-64">
@@ -484,7 +481,7 @@ const Schedule = () => {
               placeholder="ابحث عن مريض..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-4 pr-10 py-2.5 w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="pl-4 pr-10 py-2.5 w-full bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
 
@@ -493,7 +490,7 @@ const Schedule = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3.5 py-2.5 w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="px-3.5 py-2.5 w-full bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="all">كل الحالات</option>
               <option value="pending">معلق (Pending)</option>
@@ -508,7 +505,7 @@ const Schedule = () => {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3.5 py-2.5 w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="px-3.5 py-2.5 w-full bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-bold text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <option value="all">كل أنواع الكشف</option>
               <option value="clinic">زيارة للعيادة</option>
@@ -525,7 +522,7 @@ const Schedule = () => {
               setStatusFilter('all');
               setTypeFilter('all');
             }}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-bold transition-all"
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all"
           >
             إعادة تعيين الفلاتر
           </button>
@@ -546,23 +543,23 @@ const Schedule = () => {
 
         {/* Right Span: Day Agenda Sidebar */}
         <div className="lg:col-span-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-md flex flex-col h-full min-h-[640px] max-h-[750px] overflow-hidden sticky top-6">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col h-full min-h-[640px] max-h-[750px] overflow-hidden sticky top-6">
             {/* Header Details Panel */}
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800/80 bg-gradient-to-tr from-slate-50 to-white dark:from-slate-950 dark:to-slate-900/50">
+            <div className="p-5 border-b border-slate-100 bg-slate-50/50">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-800 dark:text-white">أجندة المواعيد</h3>
-                  <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mt-0.5">تفاصيل الحجوزات لليوم المحدد</p>
+                  <h3 className="text-lg font-bold text-slate-800">أجندة المواعيد</h3>
+                  <p className="text-[11px] font-semibold text-slate-400 mt-0.5">تفاصيل الحجوزات لليوم المحدد</p>
                 </div>
                 
                 {/* View/Availability Tab toggle */}
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+                <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/50">
                   <button
                     onClick={() => setActiveTab('appointments')}
                     className={`px-3 py-1.5 text-[10px] font-extrabold rounded-lg transition-all ${
                       activeTab === 'appointments' 
-                        ? 'bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-sm' 
-                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                        ? 'bg-white text-blue-600 shadow-sm' 
+                        : 'text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     الحجوزات
@@ -571,8 +568,8 @@ const Schedule = () => {
                     onClick={() => setActiveTab('availability')}
                     className={`px-3 py-1.5 text-[10px] font-extrabold rounded-lg transition-all ${
                       activeTab === 'availability' 
-                        ? 'bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-sm' 
-                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                        ? 'bg-white text-blue-600 shadow-sm' 
+                        : 'text-slate-400 hover:text-slate-600'
                     }`}
                   >
                     الساعات المتاحة
@@ -580,7 +577,7 @@ const Schedule = () => {
                 </div>
               </div>
               
-              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-3.5 py-2.5 rounded-2xl border border-blue-100/50 dark:border-blue-900/40">
+              <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3.5 py-2.5 rounded-2xl border border-blue-100/50">
                 <CalendarIcon size={14} />
                 <span className="text-xs font-bold">
                   {format(selectedDate, 'EEEE, d MMMM yyyy')}
@@ -594,11 +591,11 @@ const Schedule = () => {
                 filteredAppts.length === 0 ? (
                   // Custom Empty States Illustration
                   <div className="flex flex-col items-center justify-center h-80 text-center px-4">
-                    <div className="w-20 h-20 bg-blue-50 dark:bg-blue-950/20 rounded-full flex items-center justify-center mb-5 border border-blue-100 dark:border-blue-900/40">
-                      <Smile className="text-blue-600 dark:text-blue-400" size={38} />
+                    <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-5 border border-blue-100">
+                      <Smile className="text-blue-600" size={38} />
                     </div>
-                    <h4 className="text-sm font-extrabold text-slate-800 dark:text-white">لا توجد مواعيد مجدولة</h4>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-[200px]">
+                    <h4 className="text-sm font-bold text-slate-800">لا توجد مواعيد مجدولة</h4>
+                    <p className="text-xs text-slate-400 mt-1 max-w-[200px]">
                       لم يتم تسجيل أي حجوزات نشطة أو مطابقة في هذا التاريخ.
                     </p>
                     <button
@@ -610,7 +607,7 @@ const Schedule = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-6 relative border-r-2 border-slate-100 dark:border-slate-800 pr-4 mr-2">
+                  <div className="space-y-6 relative border-r-2 border-slate-100 pr-4 mr-2">
                     {filteredAppts.map((apt) => {
                       const patientName = apt.patientDetails?.name || apt.patient?.name || 'مريض غير معروف';
                       const initials = patientName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -619,14 +616,14 @@ const Schedule = () => {
                       return (
                         <div key={apt._id} className="relative group/card">
                           {/* Timeline dot */}
-                          <div className={`absolute -right-[23px] top-3.5 w-3.5 h-3.5 rounded-full border-4 border-white dark:border-slate-900 z-10 shadow-sm
+                          <div className={`absolute -right-[23px] top-3.5 w-3.5 h-3.5 rounded-full border-4 border-white z-10 shadow-sm
                             ${apt.status === 'completed' ? 'bg-emerald-500' : 
                               apt.status === 'confirmed' ? 'bg-blue-500' : 
                               apt.status === 'cancelled' ? 'bg-rose-500' : 'bg-amber-500'}`}
                           ></div>
                           
                           {/* Rich Appointment Details Card */}
-                          <div className="bg-slate-50 dark:bg-slate-950 border border-slate-100/50 dark:border-slate-800 p-5 rounded-2xl group-hover/card:bg-white dark:group-hover/card:bg-slate-900 group-hover/card:shadow-xl group-hover/card:border-blue-100 dark:group-hover/card:border-slate-700 transition-all duration-300">
+                          <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl group-hover/card:bg-white group-hover/card:shadow-xl group-hover/card:border-blue-100 transition-all duration-300">
                             
                             {/* Top header */}
                             <div className="flex justify-between items-start gap-2 mb-3">
@@ -635,7 +632,7 @@ const Schedule = () => {
                                   {initials}
                                 </div>
                                 <div className="min-w-0">
-                                  <h4 className="text-xs font-extrabold text-slate-800 dark:text-white truncate">
+                                  <h4 className="text-xs font-extrabold text-slate-800 truncate">
                                     {patientName}
                                   </h4>
                                   <span className="text-[9px] text-slate-400 font-bold block mt-0.5">
@@ -650,7 +647,7 @@ const Schedule = () => {
                             </div>
 
                             {/* Middle data */}
-                            <div className="space-y-1.5 py-2.5 border-y border-slate-100 dark:border-slate-800/80 my-2 text-[11px] text-slate-600 dark:text-slate-400 font-semibold">
+                            <div className="space-y-1.5 py-2.5 border-y border-slate-100 my-2 text-[11px] text-slate-600 font-semibold">
                               <div className="flex items-center gap-2">
                                 <Clock size={12} className="text-slate-400 shrink-0" />
                                 <span>{apt.startTime} - {apt.endTime}</span>
@@ -680,14 +677,14 @@ const Schedule = () => {
 
                             {/* Reason Notes preview */}
                             {apt.reason && (
-                              <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200/20 dark:border-slate-800 mb-3 line-clamp-2">
+                              <div className="text-[10px] text-slate-500 bg-slate-100 p-2.5 rounded-xl border border-slate-200/20 mb-3 line-clamp-2">
                                 <span className="font-bold text-[9px] block text-slate-400 mb-0.5">ملاحظات العيادة:</span>
                                 {apt.reason}
                               </div>
                             )}
 
                             {/* Quick Actions Panel */}
-                            <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/50">
+                            <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-100/50">
                               <div className="flex gap-1.5">
                                 <button 
                                   onClick={() => {
@@ -710,7 +707,7 @@ const Schedule = () => {
                                       confirmButtonColor: '#3b82f6',
                                     });
                                   }}
-                                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-900/40"
+                                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
                                   title="عرض التفاصيل"
                                 >
                                   <Eye size={13} />
@@ -718,7 +715,7 @@ const Schedule = () => {
                                 
                                 <button 
                                   onClick={() => navigate('/doctor/messages')}
-                                  className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-indigo-900/40"
+                                  className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
                                   title="إرسال رسالة"
                                 >
                                   <MessageSquare size={13} />
@@ -730,13 +727,13 @@ const Schedule = () => {
                                   <>
                                     <button
                                       onClick={() => handleStatusChange(apt._id, 'confirmed')}
-                                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg transition-colors shadow-sm"
+                                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
                                     >
                                       تأكيد
                                     </button>
                                     <button
                                       onClick={() => handleStatusChange(apt._id, 'cancelled')}
-                                      className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold rounded-lg transition-colors"
+                                      className="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-600 text-[10px] font-bold rounded-lg transition-colors cursor-pointer"
                                     >
                                       إلغاء
                                     </button>
@@ -746,7 +743,7 @@ const Schedule = () => {
                                 {apt.status === 'confirmed' && (
                                   <button
                                     onClick={() => handleStatusChange(apt._id, 'completed')}
-                                    className="w-full px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg transition-colors shadow-sm"
+                                    className="w-full px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
                                   >
                                     إكمال الموعد
                                   </button>
@@ -773,9 +770,9 @@ const Schedule = () => {
                     </div>
                   ) : (
                     slots.map((slot) => (
-                      <div key={slot.start} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 border border-slate-100/50 dark:border-slate-800 rounded-2xl transition-all hover:bg-white dark:hover:bg-slate-900 border-l-4 border-l-blue-500">
+                      <div key={slot.start} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-2xl transition-all hover:bg-white border-l-4 border-l-blue-500">
                         <div>
-                          <p className="text-xs font-bold text-slate-800 dark:text-white">{slot.start} - {slot.end}</p>
+                          <p className="text-xs font-bold text-slate-800">{slot.start} - {slot.end}</p>
                           <p className={`text-[10px] font-bold mt-1 ${
                             slot.status === 'available' ? 'text-emerald-500' : 
                             slot.status === 'booked' ? 'text-blue-500' : 'text-slate-400'
@@ -787,10 +784,10 @@ const Schedule = () => {
                         {slot.status !== 'booked' && (
                           <button
                             onClick={() => handleToggleBlock(slot.start)}
-                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
+                            className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all cursor-pointer ${
                               slot.status === 'blocked' 
-                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50' 
-                                : 'bg-white border border-slate-200 text-rose-500 hover:bg-rose-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700'
+                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                                : 'bg-white border border-slate-200 text-rose-500 hover:bg-rose-50'
                             }`}
                           >
                             {slot.status === 'blocked' ? 'إلغاء الحظر' : 'حظر الموعد'}
@@ -814,24 +811,24 @@ const Schedule = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide font-cairo text-right"
+              className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide font-cairo text-right"
               dir="rtl"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950 rounded-t-3xl">
+              <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50 rounded-t-2xl">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-md">
                     <UserPlus size={20} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-extrabold text-slate-800 dark:text-white">إضافة موعد كشف جديد</h3>
+                    <h3 className="text-lg font-bold text-slate-800">إضافة موعد كشف جديد</h3>
                     <p className="text-xs font-semibold text-slate-400 mt-0.5">تسجيل حجز يدوي لمريض في العيادة أو افتراضي</p>
                   </div>
                 </div>
                 
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="p-2 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                 >
                   <X size={18} />
                 </button>
@@ -843,7 +840,7 @@ const Schedule = () => {
                 {/* Patient lookup options */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200">بيانات المريض</label>
+                    <label className="text-xs font-bold text-slate-700">بيانات المريض</label>
                     <button
                       type="button"
                       onClick={() => {
@@ -851,7 +848,7 @@ const Schedule = () => {
                         setSelectedPatient(null);
                         setPatientSearch('');
                       }}
-                      className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                      className="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
                     >
                       {isNewPatient ? 'اختر مريض مسجل' : 'إضافة مريض جديد'}
                     </button>
@@ -871,13 +868,13 @@ const Schedule = () => {
                             setIsDropdownOpen(true);
                           }}
                           onFocus={() => setIsDropdownOpen(true)}
-                          className="pl-4 pr-10 py-3 w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200/60 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                          className="pl-4 pr-10 py-3 w-full bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         />
                       </div>
 
                       {/* Dropdown patients list */}
                       {isDropdownOpen && patientSearch.trim() && (
-                        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+                        <div className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl max-h-48 overflow-y-auto divide-y divide-slate-100">
                           {patientsLoading ? (
                             <div className="p-4 text-center text-xs text-slate-400">جاري البحث عن المرضى...</div>
                           ) : filteredPatients.length === 0 ? (
@@ -890,7 +887,7 @@ const Schedule = () => {
                                   setNewPatientData({ ...newPatientData, name: patientSearch });
                                   setIsDropdownOpen(false);
                                 }}
-                                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-bold text-[10px] transition-colors"
+                                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg font-bold text-[10px] transition-colors cursor-pointer"
                               >
                                 إنشاء حساب جديد لهذا المريض
                               </button>
@@ -904,13 +901,13 @@ const Schedule = () => {
                                   setPatientSearch(p.name);
                                   setIsDropdownOpen(false);
                                 }}
-                                className="flex justify-between items-center p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer transition-colors"
+                                className="flex justify-between items-center p-3.5 hover:bg-slate-50 cursor-pointer transition-colors"
                               >
                                 <div>
-                                  <p className="text-xs font-bold text-slate-800 dark:text-white">{p.name}</p>
+                                  <p className="text-xs font-bold text-slate-800">{p.name}</p>
                                   <p className="text-[10px] text-slate-400 mt-0.5">{p.email} | {p.phone || 'بدون هاتف'}</p>
                                 </div>
-                                <span className="text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded">
+                                <span className="text-[9px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
                                   #{p._id.substring(0, 6).toUpperCase()}
                                 </span>
                               </div>
@@ -920,15 +917,15 @@ const Schedule = () => {
                       )}
                       
                       {selectedPatient && (
-                        <div className="mt-3 p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100/40 dark:border-blue-900/30 flex items-center justify-between">
+                        <div className="mt-3 p-3 bg-blue-50/50 rounded-2xl border border-blue-100/40 flex items-center justify-between">
                           <div>
-                            <p className="text-xs font-bold text-blue-700 dark:text-blue-400">تم اختيار: {selectedPatient.name}</p>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{selectedPatient.email}</p>
+                            <p className="text-xs font-bold text-blue-700">تم اختيار: {selectedPatient.name}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5">{selectedPatient.email}</p>
                           </div>
                           <button 
                             type="button" 
                             onClick={() => setSelectedPatient(null)}
-                            className="p-1 bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg shadow-sm border border-slate-200/50"
+                            className="p-1 bg-white text-slate-400 hover:text-slate-600 rounded-lg shadow-sm border border-slate-200/50 cursor-pointer"
                           >
                             <X size={12} />
                           </button>
@@ -937,7 +934,7 @@ const Schedule = () => {
                     </div>
                   ) : (
                     // New Patient Registration form
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200/50">
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-400">الاسم الثلاثي للمريض *</label>
                         <input
@@ -946,7 +943,7 @@ const Schedule = () => {
                           placeholder="مثال: محمد أحمد العتيبي"
                           value={newPatientData.name}
                           onChange={(e) => setNewPatientData({ ...newPatientData, name: e.target.value })}
-                          className="px-3.5 py-2.5 w-full bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none"
+                          className="px-3.5 py-2.5 w-full bg-white border border-slate-200/60 rounded-xl text-xs font-bold focus:outline-none"
                         />
                       </div>
                       
@@ -958,7 +955,7 @@ const Schedule = () => {
                           placeholder="05xxxxxxx"
                           value={newPatientData.phone}
                           onChange={(e) => setNewPatientData({ ...newPatientData, phone: e.target.value })}
-                          className="px-3.5 py-2.5 w-full bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none text-left font-mono"
+                          className="px-3.5 py-2.5 w-full bg-white border border-slate-200/60 rounded-xl text-xs font-bold focus:outline-none text-left font-mono"
                         />
                       </div>
 
@@ -969,7 +966,7 @@ const Schedule = () => {
                           placeholder="patient@email.com"
                           value={newPatientData.email}
                           onChange={(e) => setNewPatientData({ ...newPatientData, email: e.target.value })}
-                          className="px-3.5 py-2.5 w-full bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none text-left font-mono"
+                          className="px-3.5 py-2.5 w-full bg-white border border-slate-200/60 rounded-xl text-xs font-bold focus:outline-none text-left font-mono"
                         />
                       </div>
 
@@ -983,7 +980,7 @@ const Schedule = () => {
                             placeholder="مثال: 32"
                             value={newPatientData.age}
                             onChange={(e) => setNewPatientData({ ...newPatientData, age: e.target.value })}
-                            className="px-3.5 py-2.5 w-full bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none text-center"
+                            className="px-3.5 py-2.5 w-full bg-white border border-slate-200/60 rounded-xl text-xs font-bold focus:outline-none text-center"
                           />
                         </div>
                         
@@ -992,7 +989,7 @@ const Schedule = () => {
                           <select
                             value={newPatientData.gender}
                             onChange={(e) => setNewPatientData({ ...newPatientData, gender: e.target.value })}
-                            className="px-3.5 py-2.5 w-full bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none"
+                            className="px-3.5 py-2.5 w-full bg-white border border-slate-200/60 rounded-xl text-xs font-bold focus:outline-none"
                           >
                             <option value="male">ذكر</option>
                             <option value="female">أنثى</option>
@@ -1006,26 +1003,26 @@ const Schedule = () => {
                 {/* Date & Booking Type Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200">تاريخ الكشف</label>
+                    <label className="text-xs font-bold text-slate-700">تاريخ الكشف</label>
                     <input
                       type="date"
                       required
                       min={format(new Date(), 'yyyy-MM-dd')}
                       value={bookingDate}
                       onChange={(e) => setBookingDate(e.target.value)}
-                      className="px-3.5 py-2.5 w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 rounded-2xl text-xs font-bold focus:outline-none"
+                      className="px-3.5 py-2.5 w-full bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-bold focus:outline-none"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200">نوع الكشف</label>
-                    <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-950 p-1 rounded-2xl border border-slate-200/60 dark:border-slate-800">
+                    <label className="text-xs font-bold text-slate-700">نوع الكشف</label>
+                    <div className="grid grid-cols-2 gap-2 bg-slate-50 p-1 rounded-2xl border border-slate-200/60">
                       <button
                         type="button"
                         onClick={() => setBookingType('clinic')}
-                        className={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                        className={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                           bookingType === 'clinic' 
-                            ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-black/5' 
+                            ? 'bg-white text-blue-600 shadow-sm border border-black/5' 
                             : 'text-slate-400'
                         }`}
                       >
@@ -1035,9 +1032,9 @@ const Schedule = () => {
                       <button
                         type="button"
                         onClick={() => setBookingType('virtual')}
-                        className={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                        className={`py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                           bookingType === 'virtual' 
-                            ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-black/5' 
+                            ? 'bg-white text-blue-600 shadow-sm border border-black/5' 
                             : 'text-slate-400'
                         }`}
                       >
@@ -1050,18 +1047,18 @@ const Schedule = () => {
 
                 {/* Available Slots Selectors */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-200">الفترة الزمنية المتاحة</label>
+                  <label className="text-xs font-bold text-slate-700">الفترة الزمنية المتاحة</label>
                   
                   {slotsLoadingModal ? (
-                    <div className="flex justify-center p-6 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                    <div className="flex justify-center p-6 border border-dashed border-slate-200 rounded-2xl">
                       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                     </div>
                   ) : availableBookingSlots.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-rose-500 bg-rose-50/50 dark:bg-rose-950/10 border border-rose-100/50 dark:border-rose-900/40 rounded-2xl">
+                    <div className="p-6 text-center text-xs text-rose-500 bg-rose-50/50 border border-rose-100/50 rounded-2xl">
                       عذراً، لا تتوفر أي فترات حجز شاغرة في هذا التاريخ. الرجاء اختيار يوم آخر.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-40 overflow-y-auto p-2 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/40 dark:bg-slate-950/30">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 max-h-40 overflow-y-auto p-2 border border-slate-100 rounded-2xl bg-slate-50/40">
                       {availableBookingSlots.map(s => {
                         const isBooked = s.status === 'booked';
                         const isBlocked = s.status === 'blocked';
@@ -1073,14 +1070,14 @@ const Schedule = () => {
                             type="button"
                             disabled={isBooked || isBlocked}
                             onClick={() => setSelectedTimeSlot(s)}
-                            className={`py-2 text-center text-[10px] font-extrabold rounded-xl border transition-all duration-200 ${
+                            className={`py-2 text-center text-[10px] font-extrabold rounded-xl border transition-all duration-200 cursor-pointer ${
                               isSelected 
                                 ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-500/20 scale-[1.05]' 
                                 : isBooked 
-                                  ? 'bg-blue-50/30 border-blue-50/10 text-blue-300 dark:text-blue-900 dark:bg-slate-950 cursor-not-allowed' 
+                                  ? 'bg-blue-50/30 border-blue-50/10 text-blue-300 cursor-not-allowed' 
                                   : isBlocked 
-                                    ? 'bg-slate-100/60 border-slate-100/30 text-slate-300 dark:bg-slate-950 cursor-not-allowed' 
-                                    : 'bg-white hover:bg-blue-50/50 border-slate-200/60 text-slate-700 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-300 hover:border-blue-300'
+                                    ? 'bg-slate-100/60 border-slate-100/30 text-slate-300 cursor-not-allowed' 
+                                    : 'bg-white hover:bg-blue-50/50 border-slate-200/60 text-slate-700 hover:border-blue-300'
                             }`}
                           >
                             {s.start}
@@ -1094,40 +1091,40 @@ const Schedule = () => {
                 {/* Reason & Notes Fields */}
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200">سبب الكشف / الأعراض</label>
+                    <label className="text-xs font-bold text-slate-700">سبب الكشف / الأعراض</label>
                     <input
                       type="text"
                       placeholder="مثال: فحص دوري، آلام في المفاصل..."
                       value={bookingReason}
                       onChange={(e) => setBookingReason(e.target.value)}
-                      className="px-3.5 py-2.5 w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 rounded-2xl text-xs font-bold focus:outline-none"
+                      className="px-3.5 py-2.5 w-full bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-bold focus:outline-none"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-200">ملاحظات الطبيب الخاصة</label>
+                    <label className="text-xs font-bold text-slate-700">ملاحظات الطبيب الخاصة</label>
                     <textarea
                       placeholder="سجل أي ملاحظات خاصة بالزيارة أو توجيهات للممرضين..."
                       value={bookingNotes}
                       onChange={(e) => setBookingNotes(e.target.value)}
                       rows={2}
-                      className="px-3.5 py-2.5 w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 rounded-2xl text-xs font-bold focus:outline-none resize-none"
+                      className="px-3.5 py-2.5 w-full bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-bold focus:outline-none resize-none"
                     ></textarea>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-5 py-3 border border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl text-xs font-bold transition-all"
+                    className="px-5 py-3 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-2xl text-xs font-bold transition-all cursor-pointer"
                   >
                     إلغاء
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-blue-500/20"
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold transition-all shadow-md shadow-blue-500/10 cursor-pointer"
                   >
                     حفظ وتأكيد الموعد
                   </button>

@@ -3,7 +3,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar as CalendarIcon, 
@@ -12,10 +12,6 @@ import {
   User, 
   MapPin, 
   Video, 
-  CheckCircle, 
-  XCircle,
-  AlertCircle,
-  HelpCircle,
   ChevronRight,
   ChevronLeft
 } from 'lucide-react';
@@ -190,17 +186,17 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
     const apt = event.extendedProps.appointment;
     const status = apt?.status || 'pending';
     
-    let statusClass = 'border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20';
+    let statusClass = 'border-amber-200 bg-amber-50 text-amber-700';
     let statusDot = 'bg-amber-500';
 
     if (status === 'confirmed') {
-      statusClass = 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20';
+      statusClass = 'border-emerald-200 bg-emerald-50 text-emerald-700';
       statusDot = 'bg-emerald-500';
     } else if (status === 'completed') {
-      statusClass = 'border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20';
+      statusClass = 'border-blue-200 bg-blue-50 text-blue-700';
       statusDot = 'bg-blue-500';
     } else if (status === 'cancelled') {
-      statusClass = 'border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20';
+      statusClass = 'border-rose-200 bg-rose-50 text-rose-700';
       statusDot = 'bg-rose-500';
     }
 
@@ -209,7 +205,7 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
 
     return (
       <div className={`flex items-center gap-2 p-1.5 rounded-xl border w-full text-xs shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-[1.02] ${statusClass}`}>
-        <div className="w-5 h-5 rounded-lg bg-white/70 dark:bg-black/20 flex items-center justify-center font-bold text-[10px] shrink-0 shadow-sm border border-black/5">
+        <div className="w-5 h-5 rounded-lg bg-white/70 flex items-center justify-center font-bold text-[10px] shrink-0 shadow-sm border border-black/5">
           {initials}
         </div>
         <div className="flex-1 min-w-0">
@@ -224,18 +220,18 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
   };
 
   return (
-    <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-xl shadow-slate-100/40 dark:shadow-none overflow-hidden relative">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden relative">
       {/* Custom Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800/80">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border-b border-slate-100">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl shadow-inner">
-            <CalendarIcon size={22} />
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl shadow-inner">
+            <CalendarIcon size={20} />
           </div>
           <div>
-            <h2 className="text-xl font-extrabold text-slate-800 dark:text-white capitalize">
+            <h2 className="text-lg font-bold text-slate-800 capitalize">
               {title || '...'}
             </h2>
-            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-0.5">
+            <p className="text-xs font-semibold text-slate-400 mt-0.5">
               {isRtl ? 'إدارة المواعيد والجدولة الزمنية' : 'Manage schedules and appointments'}
             </p>
           </div>
@@ -243,7 +239,7 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Month/Week/Day Views Switcher */}
-          <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
+          <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/50">
             {[
               { id: 'dayGridMonth', label: isRtl ? 'شهر' : 'Month' },
               { id: 'timeGridWeek', label: isRtl ? 'أسبوع' : 'Week' },
@@ -252,10 +248,10 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
               <button
                 key={v.id}
                 onClick={() => changeView(v.id)}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 ${
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 ${
                   currentView === v.id 
-                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-md shadow-blue-100/20' 
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                    ? 'bg-white text-blue-600 shadow-sm border border-black/5' 
+                    : 'text-slate-400 hover:text-slate-600'
                 }`}
               >
                 {v.label}
@@ -264,35 +260,35 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
           </div>
 
           {/* Navigation Controls */}
-          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 p-1 rounded-2xl border border-slate-200/30 dark:border-slate-800">
+          <div className="flex items-center gap-1 bg-slate-50 p-0.5 rounded-xl border border-slate-200/30">
             <button
               onClick={handlePrev}
-              className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
+              className="p-2 hover:bg-white rounded-lg transition-all border border-transparent hover:border-slate-100"
             >
-              {isRtl ? <ChevronRight size={18} className="text-slate-600 dark:text-slate-400" /> : <ChevronLeft size={18} className="text-slate-600 dark:text-slate-400" />}
+              {isRtl ? <ChevronRight size={18} className="text-slate-600" /> : <ChevronLeft size={18} className="text-slate-600" />}
             </button>
             <button
               onClick={handleToday}
-              className="px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-all border border-slate-200/50 dark:border-slate-700 shadow-sm"
+              className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 rounded-lg transition-all border border-slate-200 shadow-sm"
             >
               {isRtl ? 'اليوم' : 'Today'}
             </button>
             <button
               onClick={handleNext}
-              className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
+              className="p-2 hover:bg-white rounded-lg transition-all border border-transparent hover:border-slate-100"
             >
-              {isRtl ? <ChevronLeft size={18} className="text-slate-600 dark:text-slate-400" /> : <ChevronRight size={18} className="text-slate-600 dark:text-slate-400" />}
+              {isRtl ? <ChevronLeft size={18} className="text-slate-600" /> : <ChevronRight size={18} className="text-slate-600" />}
             </button>
           </div>
         </div>
       </div>
 
       {/* Calendar Area */}
-      <div className="p-6 relative">
+      <div className="p-5 relative">
         {loading && (
-          <div className="absolute inset-0 bg-white/70 dark:bg-slate-950/70 backdrop-blur-sm z-30 flex items-center justify-center transition-all duration-300">
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-30 flex items-center justify-center transition-all duration-300">
             <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
               <span className="text-xs font-bold text-slate-500">{isRtl ? 'جاري تحميل المواعيد...' : 'Loading appointments...'}</span>
             </div>
           </div>
@@ -346,18 +342,18 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
               zIndex: 9999,
               pointerEvents: 'none'
             }}
-            className="w-72 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-slate-100 dark:border-slate-800 shadow-2xl p-4 text-xs select-none"
+            className="w-72 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-100 shadow-xl p-4 text-xs select-none"
           >
             {/* Header / Avatar */}
-            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-blue-200 dark:shadow-none">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-blue-200">
                 {hoveredEvent.patientDetails?.name?.charAt(0) || hoveredEvent.patient?.name?.charAt(0) || '?'}
               </div>
               <div className="min-w-0 flex-1">
-                <h4 className="font-extrabold text-slate-800 dark:text-white truncate">
+                <h4 className="font-extrabold text-slate-800 truncate">
                   {hoveredEvent.patientDetails?.name || hoveredEvent.patient?.name || 'مريض غير معروف'}
                 </h4>
-                <div className="flex items-center gap-1.5 mt-0.5 text-slate-400 dark:text-slate-500 font-semibold">
+                <div className="flex items-center gap-1.5 mt-0.5 text-slate-400 font-semibold">
                   {hoveredEvent.bookingType === 'virtual' ? (
                     <>
                       <Video size={10} className="text-indigo-500" />
@@ -374,8 +370,8 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
             </div>
 
             {/* Middle details */}
-            <div className="py-3 space-y-2 border-b border-slate-100 dark:border-slate-800/80">
-              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium">
+            <div className="py-3 space-y-2 border-b border-slate-100">
+              <div className="flex items-center gap-2 text-slate-600 font-medium">
                 <Clock size={12} className="text-slate-400" />
                 <span>
                   {format(new Date(hoveredEvent.date), 'EEEE, d MMMM')} @ {hoveredEvent.startTime} - {hoveredEvent.endTime}
@@ -383,14 +379,14 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
               </div>
               
               {(hoveredEvent.patientDetails?.phone || hoveredEvent.patient?.phone) && (
-                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium">
+                <div className="flex items-center gap-2 text-slate-600 font-medium">
                   <Phone size={12} className="text-slate-400" />
                   <span>{hoveredEvent.patientDetails?.phone || hoveredEvent.patient?.phone}</span>
                 </div>
               )}
 
               {hoveredEvent.reason && (
-                <div className="mt-1 p-2 bg-slate-50 dark:bg-slate-800/40 rounded-lg text-slate-500 dark:text-slate-400 border border-slate-100/50 dark:border-slate-800/40 font-medium">
+                <div className="mt-1 p-2 bg-slate-50 rounded-lg text-slate-500 border border-slate-100/50 font-medium">
                   <span className="font-bold block text-[10px] text-slate-400 uppercase mb-0.5">{isRtl ? 'سبب الزيارة' : 'Reason'}</span>
                   {hoveredEvent.reason}
                 </div>
@@ -421,15 +417,9 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
         .fc-theme-standard td, .fc-theme-standard th {
           border-color: #f1f5f9 !important;
         }
-        .dark .fc-theme-standard td, .dark .fc-theme-standard th {
-          border-color: #334155/30 !important;
-        }
         .fc-col-header-cell {
           background-color: #f8fafc;
-          padding: 12px 0 !important;
-        }
-        .dark .fc-col-header-cell {
-          background-color: #030712 !important;
+          padding: 10px 0 !important;
         }
         .fc-col-header-cell-cushion {
           font-size: 11px !important;
@@ -444,15 +434,9 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
         .fc-daygrid-day:hover {
           background-color: #f8fafc/50 !important;
         }
-        .dark .fc-daygrid-day:hover {
-          background-color: #1e293b/30 !important;
-        }
         .fc-day-today {
           background-color: #eff6ff/40 !important;
           position: relative;
-        }
-        .dark .fc-day-today {
-          background-color: #1e3a8a/10 !important;
         }
         .fc-day-today .fc-daygrid-day-number {
           background-color: #3b82f6 !important;
@@ -473,9 +457,6 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
           text-decoration: none !important;
           margin: 4px;
         }
-        .dark .fc-daygrid-day-number {
-          color: #cbd5e1;
-        }
         .fc-event {
           border: none !important;
           background: transparent !important;
@@ -495,9 +476,6 @@ const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointment
           font-size: 10px !important;
           font-weight: 700 !important;
           color: #64748b !important;
-        }
-        .dark .fc-timegrid-slot-label-cushion {
-          color: #94a3b8 !important;
         }
         .fc-daygrid-day-frame {
           min-height: 110px !important;
