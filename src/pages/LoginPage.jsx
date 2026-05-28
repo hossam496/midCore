@@ -5,12 +5,14 @@ import {
   Lock,
   Eye,
   EyeOff,
-  ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import gsap from 'gsap';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import Button from '../components/Button';
 
@@ -45,16 +47,16 @@ const LoginPage = () => {
     const ctx = gsap.context(() => {
       gsap.from(formRef.current, {
         opacity: 0,
-        x: -50,
-        duration: 1,
+        x: -40,
+        duration: 0.8,
         ease: "power3.out"
       });
       gsap.from(brandingRef.current, {
         opacity: 0,
-        x: 50,
-        duration: 1,
+        x: 40,
+        duration: 0.8,
         ease: "power3.out",
-        delay: 0.2
+        delay: 0.1
       });
     });
     return () => ctx.revert();
@@ -77,6 +79,19 @@ const LoginPage = () => {
       const loggedInUser = await login({
         email: formData.email,
         password: formData.password,
+        rememberMe: formData.rememberMe, // Relay the "Remember Me" checkbox to the backend
+      });
+
+      toast.success(`مرحباً بك مجدداً، د. ${loggedInUser.name || ''}`, {
+        duration: 4000,
+        position: 'top-right',
+        style: {
+          borderRadius: '1rem',
+          background: '#10b981',
+          color: '#fff',
+          fontFamily: 'Outfit, sans-serif',
+          fontWeight: 'bold',
+        },
       });
 
       // Navigate based on role returned from backend
@@ -86,45 +101,56 @@ const LoginPage = () => {
     } catch (err) {
       const message = err.response?.data?.message || 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.';
       setApiError(message);
+      toast.error(message, {
+        duration: 5000,
+        position: 'top-right',
+        style: {
+          borderRadius: '1rem',
+          background: '#ef4444',
+          color: '#fff',
+          fontFamily: 'Outfit, sans-serif',
+          fontWeight: 'bold',
+        },
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col md:flex-row pt-20 overflow-hidden">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row pt-20 overflow-hidden" dir="rtl">
 
-      {/* Left Panel: Login Form */}
-      <div ref={formRef} className="flex-1 flex items-center justify-center px-8 md:px-16 lg:px-24 py-12 relative overflow-hidden">
-        {/* Background Image Layer */}
+      {/* Right Panel: Login Form */}
+      <div ref={formRef} className="flex-1 flex items-center justify-center px-8 md:px-16 lg:px-24 py-12 relative overflow-hidden bg-white">
+        {/* Background Decorative Layer */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 mix-blend-multiply pointer-events-none"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.03] mix-blend-multiply pointer-events-none"
           style={{ backgroundImage: 'url("/medical-bg.png")' }}
         />
 
-        <div className="w-full max-w-md space-y-10 relative z-10">
+        <div className="w-full max-w-md space-y-8 relative z-10">
           {/* Header */}
           <div className="space-y-3">
             <Link to="/" className="inline-flex items-center gap-2 group">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-200">
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200 transition-transform duration-300 group-hover:scale-105">
                 <span className="text-white font-black text-xl">م</span>
               </div>
               <span className="text-2xl font-bold text-blue-600 tracking-tighter">ميدكور</span>
             </Link>
             <div className="pt-4">
-              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">مرحباً بك مجدداً</h1>
-              <p className="text-gray-500 font-medium mt-2">الرجاء تسجيل الدخول للمتابعة إلى لوحة التحكم</p>
+              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">مرحباً بك مجدداً</h1>
+              <p className="text-slate-500 font-medium mt-1.5 text-sm">الرجاء تسجيل الدخول للمتابعة إلى لوحة التحكم الآمنة</p>
             </div>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-4">
               {/* Email */}
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700 ml-1">البريد الإلكتروني</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-600 mr-1">البريد الإلكتروني</label>
                 <div className="relative group">
-                  <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                  <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
                   <input
                     type="email"
                     name="email"
@@ -132,19 +158,19 @@ const LoginPage = () => {
                     placeholder="name@company.com"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full pr-12 pl-4 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
+                    className="w-full pr-11 pl-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all font-medium text-slate-800 text-sm"
                   />
                 </div>
               </div>
 
               {/* Password */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex justify-between items-center px-1">
-                  <label className="text-sm font-bold text-gray-700">كلمة المرور</label>
-                  <button type="button" className="text-xs font-bold text-blue-600 hover:underline">نسيت كلمة المرور؟</button>
+                  <label className="text-xs font-bold text-slate-600">كلمة المرور</label>
+                  <button type="button" className="text-xs font-bold text-blue-600 hover:underline transition-colors">نسيت كلمة المرور؟</button>
                 </div>
                 <div className="relative group">
-                  <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                  <Lock className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
@@ -152,39 +178,39 @@ const LoginPage = () => {
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full pr-12 pl-12 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all font-medium"
+                    className="w-full pr-11 pl-11 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all font-medium text-slate-800 text-sm"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                   >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
             </div>
 
             {/* Remember Me */}
-            <label className="flex items-center gap-3 cursor-pointer group w-fit">
+            <label className="flex items-center gap-2.5 cursor-pointer group w-fit py-1 select-none">
               <div className="relative flex items-center justify-center">
                 <input
                   type="checkbox"
                   name="rememberMe"
                   checked={formData.rememberMe}
                   onChange={handleChange}
-                  className="peer appearance-none w-5 h-5 border-2 border-gray-200 rounded-md checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer"
+                  className="peer appearance-none w-5 h-5 border-2 border-slate-200 rounded-md checked:bg-blue-600 checked:border-blue-600 transition-all duration-300 cursor-pointer hover:border-slate-300 focus:ring-2 focus:ring-blue-500/10"
                 />
-                <CheckCircle2 size={12} className="absolute text-white opacity-0 peer-checked:opacity-100 pointer-events-none" />
+                <CheckCircle2 size={12} className="absolute text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-all duration-300 transform scale-50 peer-checked:scale-100" />
               </div>
-              <span className="text-sm font-bold text-gray-500 group-hover:text-gray-700 transition-colors">تذكرني</span>
+              <span className="text-sm font-bold text-slate-500 group-hover:text-slate-700 transition-colors">تذكرني على هذا الجهاز</span>
             </label>
 
-            {/* API Error */}
+            {/* API Error Box */}
             {apiError && (
-              <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-sm font-medium">
-                <span className="text-red-500">⚠️</span>
-                {apiError}
+              <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-100 rounded-2xl text-red-600 text-xs font-medium animate-pulse">
+                <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} />
+                <span className="leading-relaxed">{apiError}</span>
               </div>
             )}
 
@@ -194,17 +220,17 @@ const LoginPage = () => {
                 variant="primary"
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-5 text-lg rounded-2xl shadow-xl shadow-blue-200 group disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full py-3.5 text-sm rounded-2xl shadow-lg shadow-blue-100 group disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-bold"
               >
                 {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    جاري تسجيل الدخول...
-                  </span>
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    جاري التحقق والدخول...
+                  </>
                 ) : (
                   <>
-                    تسجيل الدخول
-                    <ArrowRight size={20} className="mr-2 transition-transform duration-300 group-hover:-translate-x-1" />
+                    تسجيل الدخول الآمن
+                    <ArrowLeft size={16} className="transition-transform duration-300 group-hover:-translate-x-1" />
                   </>
                 )}
               </Button>
@@ -212,54 +238,63 @@ const LoginPage = () => {
           </form>
 
           {/* Footer */}
-          <p className="text-center text-sm text-gray-500 font-medium">
-            ليس لديك حساب؟ <Link to="/register" className="text-blue-600 font-bold hover:underline">سجل الآن</Link>
+          <p className="text-center text-sm text-slate-500 font-medium">
+            ليس لديك حساب بالفعل؟ <Link to="/register" className="text-blue-600 font-bold hover:underline transition-colors">سجل حساباً جديداً</Link>
           </p>
         </div>
       </div>
 
-      {/* Right Panel: Branding Card */}
-      <div ref={brandingRef} className="hidden md:flex flex-1 bg-slate-50 items-center justify-center p-12">
-        <div className="w-full max-w-lg space-y-8">
-          <div className="bg-white rounded-[3rem] p-10 shadow-2xl shadow-blue-900/5 border border-gray-100 relative overflow-hidden group">
+      {/* Left Panel: Medical Branding Card */}
+      <div ref={brandingRef} className="hidden md:flex flex-1 bg-slate-50 items-center justify-center p-12 relative">
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/5 to-indigo-600/5 pointer-events-none" />
+        <div className="w-full max-w-md space-y-6 relative z-10">
+          <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-900/5 border border-slate-100 relative overflow-hidden group">
+            
             {/* Status Indicator */}
-            <div className="absolute top-8 left-8 flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">النظام متصل</span>
+            <div className="absolute top-6 left-6 flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              <span className="text-[9px] font-black text-emerald-800 uppercase tracking-wider">نظام محمي</span>
             </div>
 
-            <div className="space-y-8">
-              <div className="relative rounded-[2rem] overflow-hidden border border-gray-50">
+            <div className="space-y-6">
+              <div className="relative rounded-[2rem] overflow-hidden border border-slate-100 shadow-inner bg-slate-50">
                 <img
                   src="/login-branding.png"
                   alt="Branding"
-                  className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                  onError={(e) => {
+                    // Fail-safe default styling if image is missing
+                    e.target.style.display = 'none';
+                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent" />
+                {/* Visual placeholder inside image container */}
+                <div className="h-44 bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center">
+                  <ShieldCheck size={72} className="text-white/90 animate-bounce" />
+                </div>
               </div>
 
-              <div className="space-y-4 text-center">
-                <h2 className="text-2xl font-bold text-gray-900">أمان طبي على مستوى المؤسسات</h2>
-                <p className="text-gray-500 font-medium leading-relaxed">
-                  بياناتك محمية بتشفير رائد في الصناعة وأنظمة مراقبة على مدار الساعة.
+              <div className="space-y-2 text-center">
+                <h2 className="text-xl font-bold text-slate-900">أمان طبي عالي المستوى</h2>
+                <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
+                  بيانات المرضى محمية بأحدث بروتوكولات التشفير والامتثال لمعايير HIPAA العالمية.
                 </p>
               </div>
 
-              <div className="flex items-center justify-center gap-4 pt-4">
-                <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-bold text-xs">
-                  <ShieldCheck size={16} />
-                  وصول آمن
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-xl font-bold text-xs">
+                  <ShieldCheck size={14} />
+                  جلسات مشفرة
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-600 rounded-xl font-bold text-xs">
-                  <Clock size={16} />
-                  متاح على مدار الساعة
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs">
+                  <Clock size={14} />
+                  حماية متواصلة
                 </div>
               </div>
             </div>
           </div>
 
           <div className="text-center">
-            <p className="text-xs font-bold text-gray-400 tracking-[0.2em]">موثوق به من قبل أكثر من ٥٠٠ مركز طبي</p>
+            <p className="text-[10px] font-bold text-slate-400 tracking-[0.15em] uppercase">موثوق به لدى كبرى المراكز الطبية والمستشفيات</p>
           </div>
         </div>
       </div>
