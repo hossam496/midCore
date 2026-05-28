@@ -17,6 +17,7 @@ import { BookingProvider } from './context/BookingContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { PushMessagingProvider } from './context/PushMessagingContext';
 import { SocketProvider } from './context/SocketContext';
+import { QueryProvider } from './context/QueryProvider';
 import { Toaster } from 'react-hot-toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import BookingErrorBoundary from './components/BookingErrorBoundary';
@@ -43,8 +44,9 @@ if (typeof window !== 'undefined') {
 
 const App = () => {
   return (
-    <Router>
-      <AuthProvider>
+    <QueryProvider>
+      <Router>
+        <AuthProvider>
         <PushMessagingProvider>
           <NotificationProvider>
             <SocketProvider>
@@ -137,6 +139,7 @@ const App = () => {
         </PushMessagingProvider>
       </AuthProvider>
     </Router>
+    </QueryProvider>
   );
 };
 

@@ -1,162 +1,510 @@
-import React, { useState, useEffect } from 'react';
-import {
-    format,
-    addMonths,
-    subMonths,
-    startOfMonth,
-    endOfMonth,
-    startOfWeek,
-    endOfWeek,
-    isSameMonth,
-    isSameDay,
-    addDays,
-    eachDayOfInterval
-} from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, User } from 'lucide-react';
-import toast from 'react-hot-toast'; // I'll assume toast exists or use Swal
+import React, { useRef, useState, useEffect } from 'react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import { format, parseISO } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Calendar as CalendarIcon, 
+  Clock, 
+  Phone, 
+  User, 
+  MapPin, 
+  Video, 
+  CheckCircle, 
+  XCircle,
+  AlertCircle,
+  HelpCircle,
+  ChevronRight,
+  ChevronLeft
+} from 'lucide-react';
+import { updateAppointment } from '../../api/appointmentApi';
+import toast from 'react-hot-toast';
 
-const SmartCalendar = ({ appointments, onDateSelect, loading }) => {
-    const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [selectedDate, setSelectedDate] = useState(new Date());
+const SmartCalendar = ({ appointments = [], onDateSelect, loading, onAppointmentUpdate }) => {
+  const calendarRef = useRef(null);
+  const [currentView, setCurrentView] = useState('dayGridMonth');
+  const [title, setTitle] = useState('');
+  
+  // Tooltip state
+  const [hoveredEvent, setHoveredEvent] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
-    const renderHeader = () => {
-        return (
-            <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-100 rounded-t-3xl">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 rounded-xl">
-                        <CalendarIcon className="text-blue-600" size={20} />
-                    </div>
-                    <h2 className="text-lg font-bold text-slate-800">
-                        {format(currentMonth, 'MMMM yyyy')}
-                    </h2>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                        className="p-2 hover:bg-slate-50 rounded-lg transition-colors border border-slate-100"
-                    >
-                        <ChevronLeft size={20} className="text-slate-600" />
-                    </button>
-                    <button
-                        onClick={() => setCurrentMonth(new Date())}
-                        className="px-4 py-2 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                    >
-                        Today
-                    </button>
-                    <button
-                        onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                        className="p-2 hover:bg-slate-50 rounded-lg transition-colors border border-slate-100"
-                    >
-                        <ChevronRight size={20} className="text-slate-600" />
-                    </button>
-                </div>
-            </div>
-        );
-    };
+  // Sync date formatting language with document direction
+  const isRtl = document.documentElement.dir === 'rtl';
+  const locale = isRtl ? 'ar' : 'en';
 
-    const renderDays = () => {
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        return (
-            <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
-                {days.map((day, index) => (
-                    <div key={index} className="py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        {day}
-                    </div>
-                ))}
-            </div>
-        );
-    };
+  // Format events for FullCalendar
+  const events = appointments.map(apt => {
+    try {
+      const dateStr = format(new Date(apt.date), 'yyyy-MM-dd');
+      const startStr = `${dateStr}T${apt.startTime}`;
+      const endStr = `${dateStr}T${apt.endTime}`;
 
-    const renderCells = () => {
-        const monthStart = startOfMonth(currentMonth);
-        const monthEnd = endOfMonth(monthStart);
-        const startDate = startOfWeek(monthStart);
-        const endDate = endOfWeek(monthEnd);
+      return {
+        id: apt._id,
+        title: apt.patientDetails?.name || apt.patient?.name || 'مريض غير معروف',
+        start: startStr,
+        end: endStr,
+        allDay: false,
+        extendedProps: {
+          appointment: apt,
+        },
+      };
+    } catch (err) {
+      console.error('Error formatting event:', err, apt);
+      return null;
+    }
+  }).filter(Boolean);
 
-        const rows = [];
-        let days = [];
-        let day = startDate;
-        let formattedDate = "";
+  // Handle Event Drag & Drop
+  const handleEventDrop = async (info) => {
+    const { event } = info;
+    const apt = event.extendedProps.appointment;
+    
+    const newStart = event.start;
+    const newEnd = event.end || new Date(newStart.getTime() + 30 * 60 * 1000); // fallback 30m
+    
+    const newDateStr = format(newStart, 'yyyy-MM-dd');
+    const newStartTimeStr = format(newStart, 'HH:mm');
+    const newEndTimeStr = format(newEnd, 'HH:mm');
 
-        while (day <= endDate) {
-            for (let i = 0; i < 7; i++) {
-                formattedDate = format(day, "d");
-                const cloneDay = day;
+    try {
+      await updateAppointment(apt._id, {
+        date: newDateStr,
+        startTime: newStartTimeStr,
+        endTime: newEndTimeStr,
+      });
+      
+      toast.success(isRtl ? 'تمت إعادة جدولة الموعد بنجاح' : 'Appointment rescheduled successfully');
+      
+      if (onAppointmentUpdate) {
+        onAppointmentUpdate();
+      }
+    } catch (err) {
+      info.revert();
+      console.error(err);
+      toast.error(isRtl ? 'فشل في إعادة جدولة الموعد' : 'Failed to reschedule appointment');
+    }
+  };
 
-                // Count appointments for this day
-                const dayAppts = appointments?.filter(appt =>
-                    isSameDay(new Date(appt.date), cloneDay)
-                ) || [];
+  // Handle Event Resizing
+  const handleEventResize = async (info) => {
+    const { event } = info;
+    const apt = event.extendedProps.appointment;
+    
+    const newStart = event.start;
+    const newEnd = event.end;
+    
+    if (!newEnd) return;
 
-                days.push(
-                    <div
-                        key={day.toString()}
-                        className={`relative h-28 border-r border-b border-slate-100 p-2 cursor-pointer transition-all duration-300
-              ${!isSameMonth(day, monthStart) ? "bg-slate-50/30 text-slate-300" : "text-slate-700 bg-white"}
-              ${isSameDay(day, selectedDate) ? "ring-2 ring-inset ring-blue-500 z-10" : "hover:bg-blue-50/30"}
-            `}
-                        onClick={() => {
-                            setSelectedDate(cloneDay);
-                            onDateSelect(cloneDay);
-                        }}
-                    >
-                        <span className={`inline-flex items-center justify-center w-7 h-7 text-xs font-bold rounded-lg 
-              ${isSameDay(day, new Date()) ? "bg-blue-600 text-white" : ""}
-            `}>
-                            {formattedDate}
-                        </span>
+    const newStartTimeStr = format(newStart, 'HH:mm');
+    const newEndTimeStr = format(newEnd, 'HH:mm');
 
-                        <div className="mt-2 space-y-1 overflow-y-auto max-h-[60px] scrollbar-hide">
-                            {dayAppts.slice(0, 3).map((appt, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`text-[8px] font-bold px-1.5 py-0.5 rounded border truncate
-                    ${appt.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                            appt.status === 'confirmed' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                                'bg-slate-50 text-slate-600 border-slate-100'}
-                  `}
-                                >
-                                    {appt.startTime} - {appt.patientDetails?.name || appt.patient?.name}
-                                </div>
-                            ))}
-                            {dayAppts.length > 3 && (
-                                <div className="text-[8px] font-bold text-slate-400 pl-1.5">
-                                    +{dayAppts.length - 3} more
-                                </div>
-                            )}
-                        </div>
+    try {
+      await updateAppointment(apt._id, {
+        startTime: newStartTimeStr,
+        endTime: newEndTimeStr,
+      });
+      
+      toast.success(isRtl ? 'تم تعديل مدة الموعد بنجاح' : 'Appointment duration updated successfully');
+      
+      if (onAppointmentUpdate) {
+        onAppointmentUpdate();
+      }
+    } catch (err) {
+      info.revert();
+      console.error(err);
+      toast.error(isRtl ? 'فشل في تعديل مدة الموعد' : 'Failed to update duration');
+    }
+  };
 
-                        {dayAppts.length > 0 && isSameMonth(day, monthStart) && (
-                            <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                        )}
-                    </div>
-                );
-                day = addDays(day, 1);
-            }
-            rows.push(
-                <div className="grid grid-cols-7" key={day.toString()}>
-                    {days}
-                </div>
-            );
-            days = [];
-        }
+  // Handle Date Click
+  const handleDateClick = (info) => {
+    if (onDateSelect) {
+      onDateSelect(new Date(info.dateStr));
+    }
+  };
 
-        return <div className="bg-white">{rows}</div>;
-    };
+  // Handle Event Click (Focuses today schedule on this date)
+  const handleEventClick = (info) => {
+    const eventDate = info.event.start;
+    if (onDateSelect && eventDate) {
+      onDateSelect(eventDate);
+    }
+  };
+
+  // Custom toolbar navigation
+  const handlePrev = () => {
+    const api = calendarRef.current.getApi();
+    api.prev();
+    setTitle(api.view.title);
+    if (onDateSelect) onDateSelect(api.getDate());
+  };
+
+  const handleNext = () => {
+    const api = calendarRef.current.getApi();
+    api.next();
+    setTitle(api.view.title);
+    if (onDateSelect) onDateSelect(api.getDate());
+  };
+
+  const handleToday = () => {
+    const api = calendarRef.current.getApi();
+    api.today();
+    setTitle(api.view.title);
+    if (onDateSelect) onDateSelect(new Date());
+  };
+
+  const changeView = (viewName) => {
+    const api = calendarRef.current.getApi();
+    api.changeView(viewName);
+    setCurrentView(viewName);
+    setTitle(api.view.title);
+  };
+
+  useEffect(() => {
+    if (calendarRef.current) {
+      setTitle(calendarRef.current.getApi().view.title);
+    }
+  }, [loading]);
+
+  // Tooltip handler
+  const handleMouseEnter = (info) => {
+    const rect = info.el.getBoundingClientRect();
+    setTooltipPos({
+      x: rect.left + window.scrollX + rect.width / 2,
+      y: rect.top + window.scrollY - 10,
+    });
+    setHoveredEvent(info.event.extendedProps.appointment);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredEvent(null);
+  };
+
+  // Render event card inside cells
+  const renderEventContent = (eventInfo) => {
+    const { event } = eventInfo;
+    const apt = event.extendedProps.appointment;
+    const status = apt?.status || 'pending';
+    
+    let statusClass = 'border-amber-200 bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20';
+    let statusDot = 'bg-amber-500';
+
+    if (status === 'confirmed') {
+      statusClass = 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20';
+      statusDot = 'bg-emerald-500';
+    } else if (status === 'completed') {
+      statusClass = 'border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20';
+      statusDot = 'bg-blue-500';
+    } else if (status === 'cancelled') {
+      statusClass = 'border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20';
+      statusDot = 'bg-rose-500';
+    }
+
+    const name = event.title;
+    const initials = name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?';
 
     return (
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {renderHeader()}
-            {renderDays()}
-            {loading ? (
-                <div className="h-96 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-            ) : (
-                renderCells()
-            )}
+      <div className={`flex items-center gap-2 p-1.5 rounded-xl border w-full text-xs shadow-sm hover:shadow-md transition-all duration-300 transform hover:scale-[1.02] ${statusClass}`}>
+        <div className="w-5 h-5 rounded-lg bg-white/70 dark:bg-black/20 flex items-center justify-center font-bold text-[10px] shrink-0 shadow-sm border border-black/5">
+          {initials}
         </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold truncate">{name}</div>
+          <div className="text-[9px] opacity-75 flex items-center gap-1 mt-0.5">
+            <Clock size={8} /> {apt?.startTime}
+          </div>
+        </div>
+        <div className={`w-1.5 h-1.5 rounded-full ${statusDot} shrink-0`}></div>
+      </div>
     );
+  };
+
+  return (
+    <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-xl shadow-slate-100/40 dark:shadow-none overflow-hidden relative">
+      {/* Custom Toolbar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800/80">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl shadow-inner">
+            <CalendarIcon size={22} />
+          </div>
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-800 dark:text-white capitalize">
+              {title || '...'}
+            </h2>
+            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-0.5">
+              {isRtl ? 'إدارة المواعيد والجدولة الزمنية' : 'Manage schedules and appointments'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Month/Week/Day Views Switcher */}
+          <div className="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200/50 dark:border-slate-700/50">
+            {[
+              { id: 'dayGridMonth', label: isRtl ? 'شهر' : 'Month' },
+              { id: 'timeGridWeek', label: isRtl ? 'أسبوع' : 'Week' },
+              { id: 'timeGridDay', label: isRtl ? 'يوم' : 'Day' }
+            ].map(v => (
+              <button
+                key={v.id}
+                onClick={() => changeView(v.id)}
+                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 ${
+                  currentView === v.id 
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-md shadow-blue-100/20' 
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Navigation Controls */}
+          <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 p-1 rounded-2xl border border-slate-200/30 dark:border-slate-800">
+            <button
+              onClick={handlePrev}
+              className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
+            >
+              {isRtl ? <ChevronRight size={18} className="text-slate-600 dark:text-slate-400" /> : <ChevronLeft size={18} className="text-slate-600 dark:text-slate-400" />}
+            </button>
+            <button
+              onClick={handleToday}
+              className="px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-all border border-slate-200/50 dark:border-slate-700 shadow-sm"
+            >
+              {isRtl ? 'اليوم' : 'Today'}
+            </button>
+            <button
+              onClick={handleNext}
+              className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
+            >
+              {isRtl ? <ChevronLeft size={18} className="text-slate-600 dark:text-slate-400" /> : <ChevronRight size={18} className="text-slate-600 dark:text-slate-400" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Calendar Area */}
+      <div className="p-6 relative">
+        {loading && (
+          <div className="absolute inset-0 bg-white/70 dark:bg-slate-950/70 backdrop-blur-sm z-30 flex items-center justify-center transition-all duration-300">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+              <span className="text-xs font-bold text-slate-500">{isRtl ? 'جاري تحميل المواعيد...' : 'Loading appointments...'}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="fc-premium-theme">
+          <FullCalendar
+            ref={calendarRef}
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            initialView={currentView}
+            headerToolbar={false} // Hidden standard header
+            events={events}
+            editable={true}
+            selectable={true}
+            selectMirror={true}
+            dayMaxEvents={3}
+            locale={locale}
+            direction={isRtl ? 'rtl' : 'ltr'}
+            dateClick={handleDateClick}
+            eventClick={handleEventClick}
+            eventDrop={handleEventDrop}
+            eventResize={handleEventResize}
+            eventMouseEnter={handleMouseEnter}
+            eventMouseLeave={handleMouseLeave}
+            eventContent={renderEventContent}
+            slotDuration="00:30:00"
+            slotLabelFormat={{
+              hour: '2-digit',
+              minute: '2-digit',
+              meridiem: 'short',
+              hour12: true
+            }}
+            allDaySlot={false}
+            height="auto"
+          />
+        </div>
+      </div>
+
+      {/* Floating Interactive Tooltip */}
+      <AnimatePresence>
+        {hoveredEvent && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            style={{
+              position: 'absolute',
+              left: tooltipPos.x - 140, // centered (width is 280)
+              top: tooltipPos.y - 200,
+              zIndex: 9999,
+              pointerEvents: 'none'
+            }}
+            className="w-72 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-slate-100 dark:border-slate-800 shadow-2xl p-4 text-xs select-none"
+          >
+            {/* Header / Avatar */}
+            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow-md shadow-blue-200 dark:shadow-none">
+                {hoveredEvent.patientDetails?.name?.charAt(0) || hoveredEvent.patient?.name?.charAt(0) || '?'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-extrabold text-slate-800 dark:text-white truncate">
+                  {hoveredEvent.patientDetails?.name || hoveredEvent.patient?.name || 'مريض غير معروف'}
+                </h4>
+                <div className="flex items-center gap-1.5 mt-0.5 text-slate-400 dark:text-slate-500 font-semibold">
+                  {hoveredEvent.bookingType === 'virtual' ? (
+                    <>
+                      <Video size={10} className="text-indigo-500" />
+                      <span>{isRtl ? 'استشارة مرئية' : 'Virtual Consult'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPin size={10} className="text-emerald-500" />
+                      <span>{isRtl ? 'زيارة للعيادة' : 'Clinic Visit'}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Middle details */}
+            <div className="py-3 space-y-2 border-b border-slate-100 dark:border-slate-800/80">
+              <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium">
+                <Clock size={12} className="text-slate-400" />
+                <span>
+                  {format(new Date(hoveredEvent.date), 'EEEE, d MMMM')} @ {hoveredEvent.startTime} - {hoveredEvent.endTime}
+                </span>
+              </div>
+              
+              {(hoveredEvent.patientDetails?.phone || hoveredEvent.patient?.phone) && (
+                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300 font-medium">
+                  <Phone size={12} className="text-slate-400" />
+                  <span>{hoveredEvent.patientDetails?.phone || hoveredEvent.patient?.phone}</span>
+                </div>
+              )}
+
+              {hoveredEvent.reason && (
+                <div className="mt-1 p-2 bg-slate-50 dark:bg-slate-800/40 rounded-lg text-slate-500 dark:text-slate-400 border border-slate-100/50 dark:border-slate-800/40 font-medium">
+                  <span className="font-bold block text-[10px] text-slate-400 uppercase mb-0.5">{isRtl ? 'سبب الزيارة' : 'Reason'}</span>
+                  {hoveredEvent.reason}
+                </div>
+              )}
+            </div>
+
+            {/* Footer with Status */}
+            <div className="flex justify-between items-center pt-3">
+              <span className="text-[10px] text-slate-400 font-bold uppercase">{isRtl ? 'حالة الحجز' : 'Status'}</span>
+              <span className={`px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase border ${
+                hoveredEvent.status === 'confirmed' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                hoveredEvent.status === 'completed' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                hoveredEvent.status === 'cancelled' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                'bg-amber-50 text-amber-600 border-amber-200'
+              }`}>
+                {hoveredEvent.status}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Styled calendar overrides injected via CSS */}
+      <style>{`
+        .fc {
+          font-family: 'Cairo', sans-serif !important;
+        }
+        .fc-theme-standard td, .fc-theme-standard th {
+          border-color: #f1f5f9 !important;
+        }
+        .dark .fc-theme-standard td, .dark .fc-theme-standard th {
+          border-color: #334155/30 !important;
+        }
+        .fc-col-header-cell {
+          background-color: #f8fafc;
+          padding: 12px 0 !important;
+        }
+        .dark .fc-col-header-cell {
+          background-color: #030712 !important;
+        }
+        .fc-col-header-cell-cushion {
+          font-size: 11px !important;
+          font-weight: 800 !important;
+          text-transform: uppercase;
+          color: #94a3b8 !important;
+          letter-spacing: 0.05em;
+        }
+        .fc-daygrid-day {
+          transition: background-color 0.2s ease;
+        }
+        .fc-daygrid-day:hover {
+          background-color: #f8fafc/50 !important;
+        }
+        .dark .fc-daygrid-day:hover {
+          background-color: #1e293b/30 !important;
+        }
+        .fc-day-today {
+          background-color: #eff6ff/40 !important;
+          position: relative;
+        }
+        .dark .fc-day-today {
+          background-color: #1e3a8a/10 !important;
+        }
+        .fc-day-today .fc-daygrid-day-number {
+          background-color: #3b82f6 !important;
+          color: white !important;
+          border-radius: 8px;
+          min-width: 24px;
+          height: 24px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin: 4px;
+          box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4);
+        }
+        .fc-daygrid-day-number {
+          font-size: 12px !important;
+          font-weight: 700 !important;
+          color: #64748b;
+          text-decoration: none !important;
+          margin: 4px;
+        }
+        .dark .fc-daygrid-day-number {
+          color: #cbd5e1;
+        }
+        .fc-event {
+          border: none !important;
+          background: transparent !important;
+          margin: 2px 4px !important;
+        }
+        .fc-daygrid-more-link {
+          font-size: 10px !important;
+          font-weight: 800 !important;
+          color: #3b82f6 !important;
+          text-decoration: none !important;
+          margin-left: 6px;
+        }
+        .fc-timegrid-slot {
+          height: 48px !important;
+        }
+        .fc-timegrid-slot-label-cushion {
+          font-size: 10px !important;
+          font-weight: 700 !important;
+          color: #64748b !important;
+        }
+        .dark .fc-timegrid-slot-label-cushion {
+          color: #94a3b8 !important;
+        }
+        .fc-daygrid-day-frame {
+          min-height: 110px !important;
+        }
+      `}</style>
+    </div>
+  );
 };
 
 export default SmartCalendar;
